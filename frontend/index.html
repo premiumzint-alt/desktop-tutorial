@@ -1,0 +1,2295 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sentinel | Server Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f3edff;
+      --muted: #b9accd;
+      --panel: rgba(28, 20, 43, .7);
+      --line: rgba(194, 167, 235, .17);
+      --glass-edge: rgba(225, 209, 248, .2);
+      --glass-shine: rgba(251, 246, 255, .12);
+      --royal-purple: #7043bd;
+      --royal-highlight: #a986e8;
+      --night-lavender: #d2c4f0;
+      --orange: #f0a36d;
+      --red: #ef7771;
+    }
+    * { box-sizing: border-box; }
+    body {
+      position: relative;
+      isolation: isolate;
+      background-color: #090611;
+      background-image: linear-gradient(180deg, #090611 0%, #100a1d 54%, #0b0713 100%),
+        radial-gradient(ellipse at 16% 18%, rgba(93, 61, 145, .2), transparent 44%),
+        radial-gradient(ellipse at 82% 72%, rgba(71, 48, 119, .15), transparent 42%);
+      color: var(--ink);
+      font-family: "Segoe UI", sans-serif;
+    }
+    body::before,
+    body::after {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      content: "";
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+    }
+    body::before {
+      opacity: .78;
+      background-image:
+        radial-gradient(1.3px 1.3px at 6% 13%, rgba(245, 239, 255, .98) 55%, transparent 100%),
+        radial-gradient(1px 1px at 12% 72%, rgba(215, 198, 250, .85) 55%, transparent 100%),
+        radial-gradient(1.1px 1.1px at 19% 34%, rgba(245, 239, 255, .88) 55%, transparent 100%),
+        radial-gradient(1px 1px at 25% 88%, rgba(215, 198, 250, .72) 55%, transparent 100%),
+        radial-gradient(1.3px 1.3px at 31% 17%, rgba(245, 239, 255, .94) 55%, transparent 100%),
+        radial-gradient(1px 1px at 38% 58%, rgba(215, 198, 250, .75) 55%, transparent 100%),
+        radial-gradient(1px 1px at 44% 9%, rgba(245, 239, 255, .75) 55%, transparent 100%),
+        radial-gradient(1.2px 1.2px at 51% 79%, rgba(215, 198, 250, .92) 55%, transparent 100%),
+        radial-gradient(1.25px 1.25px at 58% 27%, rgba(245, 239, 255, .9) 55%, transparent 100%),
+        radial-gradient(1px 1px at 64% 91%, rgba(215, 198, 250, .74) 55%, transparent 100%),
+        radial-gradient(1.3px 1.3px at 71% 48%, rgba(245, 239, 255, .96) 55%, transparent 100%),
+        radial-gradient(1px 1px at 77% 12%, rgba(215, 198, 250, .7) 55%, transparent 100%),
+        radial-gradient(1.2px 1.2px at 84% 82%, rgba(245, 239, 255, .92) 55%, transparent 100%),
+        radial-gradient(1px 1px at 91% 37%, rgba(215, 198, 250, .78) 55%, transparent 100%),
+        radial-gradient(1.3px 1.3px at 96% 67%, rgba(245, 239, 255, .9) 55%, transparent 100%),
+        radial-gradient(1px 1px at 3% 51%, rgba(215, 198, 250, .82) 55%, transparent 100%),
+        radial-gradient(1px 1px at 15% 92%, rgba(245, 239, 255, .86) 55%, transparent 100%),
+        radial-gradient(1.1px 1.1px at 28% 46%, rgba(215, 198, 250, .9) 55%, transparent 100%),
+        radial-gradient(1px 1px at 34% 96%, rgba(245, 239, 255, .8) 55%, transparent 100%),
+        radial-gradient(1.2px 1.2px at 47% 31%, rgba(245, 239, 255, .88) 55%, transparent 100%),
+        radial-gradient(1px 1px at 55% 11%, rgba(215, 198, 250, .8) 55%, transparent 100%),
+        radial-gradient(1px 1px at 68% 68%, rgba(245, 239, 255, .84) 55%, transparent 100%),
+        radial-gradient(1.1px 1.1px at 80% 34%, rgba(215, 198, 250, .88) 55%, transparent 100%),
+        radial-gradient(1px 1px at 89% 6%, rgba(245, 239, 255, .82) 55%, transparent 100%),
+        radial-gradient(1px 1px at 98% 49%, rgba(215, 198, 250, .84) 55%, transparent 100%);
+    }
+    body::after {
+      opacity: .5;
+      background-image:
+        radial-gradient(2px 2px at 9% 46%, rgba(250, 246, 255, 1) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 23% 6%, rgba(218, 202, 249, .98) 50%, transparent 100%),
+        radial-gradient(2.2px 2.2px at 36% 76%, rgba(250, 246, 255, .96) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 49% 42%, rgba(218, 202, 249, .98) 50%, transparent 100%),
+        radial-gradient(2px 2px at 62% 6%, rgba(250, 246, 255, .95) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 74% 61%, rgba(218, 202, 249, .98) 50%, transparent 100%),
+        radial-gradient(2.2px 2.2px at 88% 21%, rgba(250, 246, 255, .96) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 94% 95%, rgba(218, 202, 249, .94) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 17% 25%, rgba(250, 246, 255, .92) 50%, transparent 100%),
+        radial-gradient(2px 2px at 42% 14%, rgba(218, 202, 249, .96) 50%, transparent 100%),
+        radial-gradient(1.8px 1.8px at 69% 88%, rgba(250, 246, 255, .92) 50%, transparent 100%),
+        radial-gradient(2px 2px at 82% 52%, rgba(218, 202, 249, .95) 50%, transparent 100%);
+      animation: star-twinkle 8s ease-in-out infinite alternate;
+    }
+    @keyframes star-twinkle { from { opacity: .36; } to { opacity: .72; } }
+    body > header,
+    body > main { position: relative; z-index: 1; }
+    .mono { font-family: Consolas, "SFMono-Regular", monospace; }
+    .panel {
+      border: 1px solid var(--glass-edge);
+      border-radius: 8px;
+      background: linear-gradient(145deg, rgba(236, 224, 255, .075), rgba(236, 224, 255, .018) 34%, transparent 72%), var(--panel);
+      box-shadow: inset 0 1px 0 var(--glass-shine), inset 0 -1px 0 rgba(0, 0, 0, .2), 0 14px 36px rgba(0, 0, 0, .22);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+      backdrop-filter: blur(18px) saturate(135%);
+    }
+    .glass-header {
+      border-color: var(--glass-edge);
+      background: rgba(16, 10, 26, .68);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, .035);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+      backdrop-filter: blur(22px) saturate(145%);
+    }
+    .glass-input {
+      border-color: rgba(221, 203, 248, .18);
+      background: rgba(15, 9, 25, .66);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, .28), 0 1px 0 rgba(255, 255, 255, .035);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+    .glass-input:focus { border-color: rgba(210, 196, 240, .78); box-shadow: 0 0 0 3px rgba(169, 134, 232, .18); }
+    .metric-value { font-variant-numeric: tabular-nums; }
+    .status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--royal-highlight); box-shadow: 0 0 12px rgba(169, 134, 232, .5); }
+    .status-indicator { display: inline-flex; align-items: center; gap: 8px; }
+    .status-indicator[data-state="stale"] .status-dot,
+    .status-indicator[data-state="unavailable"] .status-dot { background: var(--orange); box-shadow: 0 0 12px rgba(240, 163, 109, .35); }
+    .status-indicator[data-state="live"] .status-dot { background: var(--royal-highlight); }
+    .chart-frame { position: relative; height: 280px; min-width: 0; }
+    .chart-frame canvas { cursor: grab; touch-action: pan-y; }
+    .chart-frame canvas:active { cursor: grabbing; }
+    .chart-control { display: grid; width: 34px; height: 32px; place-items: center; border: 1px solid var(--glass-edge); border-radius: 6px; background: rgba(201, 182, 244, .045); color: var(--muted); font-size: 15px; line-height: 1; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .chart-control:hover:not(:disabled) { border-color: var(--night-lavender); color: var(--ink); }
+    .chart-control:disabled { cursor: not-allowed; opacity: .4; }
+    .chart-control-reset { width: auto; padding: 0 9px; font-size: 11px; }
+    .alerts-scroll { max-height: 16rem; overflow-y: auto; }
+    .findings-scroll { max-height: 34rem; overflow: auto; }
+    .findings-scroll thead { position: sticky; top: 0; z-index: 1; }
+    .finding-filter[aria-pressed="true"] { border-color: rgba(210, 196, 240, .62); color: var(--ink); background: rgba(169, 134, 232, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+    .finding-filter:focus-visible { outline: 2px solid var(--night-lavender); outline-offset: 2px; }
+    .account-dialog { width: min(440px, calc(100vw - 32px)); max-width: 440px; border: 1px solid var(--glass-edge); border-radius: 8px; padding: 0; background: rgba(28, 20, 43, .84); color: var(--ink); box-shadow: inset 0 1px 0 var(--glass-shine), 0 24px 80px rgba(0, 0, 0, .5); -webkit-backdrop-filter: blur(24px) saturate(140%); backdrop-filter: blur(24px) saturate(140%); }
+    .account-dialog::backdrop { background: rgba(0, 0, 0, .58); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .settings-dialog { width: min(760px, calc(100vw - 32px)); max-width: 760px; }
+    .lang-toggle { border: 1px solid var(--glass-edge); border-radius: 6px; background: rgba(201, 182, 244, .045); color: var(--muted); font-size: 11px; line-height: 1.2; }
+    .lang-toggle[aria-pressed="true"] { border-color: rgba(210, 196, 240, .62); color: var(--ink); background: rgba(169, 134, 232, .16); }
+    .lang-toggle:hover { color: var(--ink); }
+    .lang-toggle:focus-visible { outline: 2px solid var(--night-lavender); outline-offset: 2px; }
+    html[lang="th"] body,
+    html[lang="th"] button,
+    html[lang="th"] input,
+    html[lang="th"] select,
+    html[lang="th"] textarea { font-family: "Leelawadee UI", "Tahoma", "Noto Sans Thai", "Sarabun", "Segoe UI", sans-serif; line-height: 1.7; }
+    html[lang="th"] [class*="uppercase"] { text-transform: none; letter-spacing: .01em; }
+    html[lang="th"] th { text-transform: none; letter-spacing: 0; font-size: 11px; padding-top: .85rem; padding-bottom: .85rem; }
+    html[lang="th"] .mono { font-family: "Cascadia Mono", Consolas, "Leelawadee UI", "Tahoma", monospace; letter-spacing: 0; }
+    html[lang="th"] h1,
+    html[lang="th"] h2,
+    html[lang="th"] h3,
+    html[lang="th"] p,
+    html[lang="th"] label,
+    html[lang="th"] button { word-break: normal; overflow-wrap: break-word; }
+    /* Thai must wrap at syllable boundaries: breaking anywhere stacks one glyph per line
+       and inflates table headers and message rows. */
+    html[lang="th"] table { table-layout: auto; }
+    html[lang="th"] th { white-space: nowrap; }
+    html[lang="th"] td { word-break: normal; overflow-wrap: break-word; }
+    html[lang="th"] td,
+    html[lang="th"] th,
+    html[lang="th"] .metric-value { line-height: 1.6; }
+    html[lang="th"] .max-h-40 { max-width: 13rem; }
+    .toolbar-button { display: inline-grid; width: 36px; height: 34px; padding: 0; place-items: center; border: 1px solid var(--glass-edge); border-radius: 6px; background: rgba(201, 182, 244, .045); color: var(--muted); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    .toolbar-button.hidden { display: none; }
+    .toolbar-button:hover:not(:disabled) { border-color: var(--night-lavender); color: var(--ink); }
+    .toolbar-button:disabled { cursor: not-allowed; opacity: .4; }
+    .toolbar-button:focus-visible { outline: 2px solid var(--night-lavender); outline-offset: 2px; }
+    .toolbar-button svg { width: 16px; height: 16px; }
+    .range-filter { border: 1px solid var(--glass-edge); background: rgba(201, 182, 244, .045); color: var(--muted); }
+    .range-filter[aria-pressed="true"] { border-color: rgba(210, 196, 240, .62); color: var(--ink); background: rgba(169, 134, 232, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+    .range-filter:focus-visible { outline: 2px solid var(--night-lavender); outline-offset: 2px; }
+    [class~="text-[#91a1a1]"] { color: var(--muted) !important; }
+    [class~="text-[#718180]"] { color: #a494bd !important; }
+    [class~="text-[#aab8b7]"] { color: #d9cdef !important; }
+    [class~="text-[#c1e879]"] { color: var(--royal-highlight) !important; }
+    [class~="text-[#66d8c6]"] { color: var(--night-lavender) !important; }
+    [class~="bg-[#0c1112]/90"] { background: rgba(16, 10, 26, .68) !important; }
+    [class~="bg-[#0d1415]"] { background: rgba(15, 9, 25, .66) !important; }
+    [class~="bg-[#172321]"] { background: rgba(68, 46, 99, .56) !important; }
+    [class~="bg-[#283535]"] { background: rgba(196, 177, 229, .18) !important; }
+    [class~="bg-[#111819]"] { background: rgba(20, 13, 31, .94) !important; }
+    [class~="bg-[#c1e879]"] { background: var(--royal-purple) !important; }
+    [class~="hover:bg-[#d0f18b]"]:hover { background: #8155cf !important; }
+    [class~="bg-[#66d8c6]"] { background: var(--night-lavender) !important; }
+    [class~="text-[#111715]"] { color: #fff !important; }
+    [class~="border-[#54736b]"], [class~="border-[#344344]"], [class~="border-[#3b4b4c]"], [class~="border-[#293637]"] { border-color: var(--line) !important; }
+    [class~="hover:border-[#66d8c6]"]:hover, [class~="focus:border-[#66d8c6]"]:focus { border-color: var(--night-lavender) !important; }
+    canvas { display: block; max-height: 270px; }
+    @media (max-width: 640px) {
+      .chart-frame { height: 230px; }
+      .findings-scroll { max-height: 60vh; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      main { animation: enter .5s ease-out both; }
+      @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="glass-header border-b">
+    <div class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-5 py-4 lg:px-8">
+      <a href="#" class="flex items-center gap-3" aria-label="Sentinel dashboard">
+        <span class="grid h-9 w-9 place-items-center border border-[#54736b] bg-[#172321] text-sm font-bold text-[#c1e879]">S</span>
+        <span>
+          <span class="block text-sm font-semibold tracking-wide">SENTINEL</span>
+          <span class="block text-[10px] uppercase tracking-[.18em] text-[#91a1a1]">Server observability</span>
+        </span>
+      </a>
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <div role="group" aria-label="Language" class="flex items-center gap-1">
+          <button type="button" data-language="en" class="lang-toggle px-2 py-1.5" aria-pressed="true">EN</button>
+          <button type="button" data-language="th" class="lang-toggle px-2 py-1.5" aria-pressed="false">ไทย</button>
+        </div>
+        <span id="connection-state" data-state="connecting" aria-live="polite" class="status-indicator hidden text-xs text-[#91a1a1] sm:flex"><span class="status-dot" aria-hidden="true"></span><span id="connection-label">Connecting</span></span>
+        <button id="account-identity" type="button" class="hidden max-w-40 items-center gap-2 border border-[#344344] px-3 py-2 text-xs transition hover:border-[#66d8c6] inline-flex" aria-label="Account settings">
+          <span class="text-[#718180]">Account</span>
+          <span id="account-name" class="mono truncate text-[#d5dfdd]"></span>
+        </button>
+        <div class="flex items-center gap-2">
+        <button id="refresh-button" type="button" aria-label="Refresh data" title="Refresh data" class="toolbar-button hidden">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
+          </svg>
+        </button>
+        <button id="settings-button" type="button" aria-label="Settings" title="Settings" class="toolbar-button hidden">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+        <button id="logout-button" type="button" aria-label="Sign out" title="Sign out" class="toolbar-button hidden">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 17l5-5-5-5" />
+            <path d="M20 12H9" />
+            <path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" />
+          </svg>
+        </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <dialog id="account-dialog" class="account-dialog">
+    <div class="border-b border-[#293637] px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold">Account settings</h2>
+          <p class="mt-1 text-xs text-[#91a1a1]">Confirm your current password to save changes.</p>
+        </div>
+        <button id="close-account-dialog" type="button" class="border border-[#3b4b4c] px-3 py-2 text-xs text-[#d5dfdd] hover:border-[#66d8c6]">Close</button>
+      </div>
+    </div>
+    <form id="account-form" class="space-y-4 p-5">
+      <label class="block text-xs text-[#aab8b7]">Current password
+        <input id="current-password" type="password" required autocomplete="current-password" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+      </label>
+      <label class="block text-xs text-[#aab8b7]">New username <span class="text-[#718180]">(optional)</span>
+        <input id="new-username" type="text" minlength="3" maxlength="80" autocomplete="username" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+      </label>
+      <label class="block text-xs text-[#aab8b7]">New password <span class="text-[#718180]">(optional, at least 12 characters)</span>
+        <input id="new-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+      </label>
+      <label class="block text-xs text-[#aab8b7]">Confirm new password
+        <input id="confirm-new-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+      </label>
+      <p id="account-form-message" role="status" aria-live="polite" class="hidden text-sm"></p>
+      <div class="flex justify-end gap-3 border-t border-[#293637] pt-4">
+        <button id="cancel-account-changes" type="button" class="border border-[#3b4b4c] px-4 py-2 text-xs text-[#d5dfdd] hover:border-[#66d8c6]">Cancel</button>
+        <button id="save-account-changes" type="submit" class="bg-[#c1e879] px-4 py-2 text-xs font-semibold text-[#111715] hover:bg-[#d0f18b]">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog" class="account-dialog settings-dialog">
+    <div class="border-b border-[#293637] px-5 py-4">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold">Monitoring settings</h2>
+          <p class="mt-1 text-xs text-[#91a1a1]">Thresholds, custom alert rules, and the IP allowlist used to evaluate alerts.</p>
+        </div>
+        <button id="close-settings-dialog" type="button" class="border border-[#3b4b4c] px-3 py-2 text-xs text-[#d5dfdd] hover:border-[#66d8c6]">Close</button>
+      </div>
+    </div>
+    <div class="max-h-[72vh] space-y-6 overflow-y-auto p-5">
+      <section aria-labelledby="thresholds-heading">
+        <h3 id="thresholds-heading" class="text-sm font-semibold">System thresholds</h3>
+        <p class="mt-1 text-xs text-[#91a1a1]">An alert fires when the latest sample reaches these values.</p>
+        <div class="mt-3 flex flex-wrap items-end gap-3">
+          <label class="block text-xs text-[#aab8b7]">Scope
+            <select id="threshold-scope" class="mt-2 border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+              <option value="">All hosts (global)</option>
+            </select>
+          </label>
+          <button id="threshold-delete-override" type="button" class="hidden border border-[#3b4b4c] px-3 py-2 text-xs text-[#d5dfdd] hover:border-[#66d8c6]">Remove host override</button>
+          <p id="thresholds-scope-note" class="text-xs text-[#718180]"></p>
+        </div>
+        <form id="thresholds-form" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="block text-xs text-[#aab8b7]">CPU percent
+            <input id="threshold-cpu" type="number" min="0" max="100" step="0.1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Memory percent
+            <input id="threshold-memory" type="number" min="0" max="100" step="0.1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Disk percent
+            <input id="threshold-disk" type="number" min="0" max="100" step="0.1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Failed login count
+            <input id="threshold-logins" type="number" min="1" max="10000" step="1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7] sm:col-span-2">Failed login window (minutes)
+            <input id="threshold-window" type="number" min="1" max="1440" step="1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#293637] pt-3 sm:col-span-2">
+            <p id="thresholds-message" role="status" aria-live="polite" class="hidden text-xs"></p>
+            <button type="submit" class="bg-[#c1e879] px-4 py-2 text-xs font-semibold text-[#111715] hover:bg-[#d0f18b]">Save thresholds</button>
+          </div>
+        </form>
+      </section>
+
+      <section aria-labelledby="retention-heading" class="border-t border-[#293637] pt-5">
+        <h3 id="retention-heading" class="text-sm font-semibold">Data retention</h3>
+        <p class="mt-1 text-xs text-[#91a1a1]">MongoDB deletes data older than these ages. 0 keeps it forever.</p>
+        <form id="retention-form" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label class="block text-xs text-[#aab8b7]">Metrics (days)
+            <input id="retention-metrics" type="number" min="0" max="3650" step="1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Security events (days)
+            <input id="retention-events" type="number" min="0" max="3650" step="1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Scan results (days)
+            <input id="retention-scans" type="number" min="0" max="3650" step="1" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#293637] pt-3 sm:col-span-3">
+            <p id="retention-message" role="status" aria-live="polite" class="hidden text-xs"></p>
+            <button type="submit" class="bg-[#c1e879] px-4 py-2 text-xs font-semibold text-[#111715] hover:bg-[#d0f18b]">Save retention</button>
+          </div>
+        </form>
+      </section>
+
+      <section aria-labelledby="rules-heading" class="border-t border-[#293637] pt-5">
+        <h3 id="rules-heading" class="text-sm font-semibold">Custom alert rules</h3>
+        <p class="mt-1 text-xs text-[#91a1a1]">Each rule is compared against the newest metric sample.</p>
+        <ul id="rules-list" class="mt-3 space-y-2 text-sm"></ul>
+        <form id="rules-form" class="mt-4 space-y-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label class="block text-xs text-[#aab8b7]">Rule name
+              <input id="rule-name" type="text" required maxlength="120" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+            <label class="block text-xs text-[#aab8b7]">Metric
+              <select id="rule-metric" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+                <option value="cpu_percent">cpu_percent</option>
+                <option value="memory_percent">memory_percent</option>
+                <option value="disk_percent">disk_percent</option>
+                <option value="network_bytes_sent">network_bytes_sent</option>
+                <option value="network_bytes_received">network_bytes_received</option>
+                <option value="cpu_temp_celsius">cpu_temp_celsius</option>
+                <option value="system_temp_celsius">system_temp_celsius</option>
+              </select>
+            </label>
+            <label class="block text-xs text-[#aab8b7] sm:col-span-2">Applies to
+              <select id="rule-host" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+                <option value="">All hosts</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid grid-cols-[90px_minmax(0,1fr)_auto] items-end gap-3">
+            <label class="block text-xs text-[#aab8b7]">Operator
+              <select id="rule-operator" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-2 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+                <option value=">">&gt;</option>
+                <option value=">=">&gt;=</option>
+                <option value="<">&lt;</option>
+                <option value="<=">&lt;=</option>
+                <option value="==">==</option>
+              </select>
+            </label>
+            <label class="block text-xs text-[#aab8b7]">Threshold
+              <input id="rule-threshold" type="number" step="any" required class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+            <button type="submit" class="border border-[#3b4b4c] px-4 py-2 text-xs font-medium text-[#d5dfdd] hover:border-[#66d8c6] hover:text-white">Add rule</button>
+          </div>
+          <p id="rules-message" role="status" aria-live="polite" class="hidden text-xs"></p>
+        </form>
+      </section>
+
+      <section aria-labelledby="allowlist-heading" class="border-t border-[#293637] pt-5">
+        <h3 id="allowlist-heading" class="text-sm font-semibold">IP allowlist</h3>
+        <p class="mt-1 text-xs text-[#91a1a1]">Failed-login alerts ignore these addresses.</p>
+        <ul id="whitelist-list" class="mt-3 space-y-2 text-sm"></ul>
+        <form id="whitelist-form" class="mt-4 space-y-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+            <label class="block text-xs text-[#aab8b7]">IP address
+              <input id="whitelist-ip" type="text" required placeholder="203.0.113.10" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+            <label class="block text-xs text-[#aab8b7]">Label
+              <input id="whitelist-label" type="text" maxlength="120" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+            <button type="submit" class="border border-[#3b4b4c] px-4 py-2 text-xs font-medium text-[#d5dfdd] hover:border-[#66d8c6] hover:text-white">Add address</button>
+          </div>
+          <p id="whitelist-message" role="status" aria-live="polite" class="hidden text-xs"></p>
+        </form>
+      </section>
+
+      <section aria-labelledby="notifications-heading" class="border-t border-[#293637] pt-5">
+        <h3 id="notifications-heading" class="text-sm font-semibold">Alert notifications</h3>
+        <p class="mt-1 text-xs text-[#91a1a1]">Sent when alerts are active; identical alerts are not resent. Webhook URLs are stored on the server and shown masked.</p>
+        <ul id="channels-list" class="mt-3 space-y-2 text-sm"></ul>
+        <form id="channels-form" class="mt-4 space-y-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label class="block text-xs text-[#aab8b7]">Channel name
+              <input id="channel-name" type="text" required maxlength="120" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+            <label class="block text-xs text-[#aab8b7]">Type
+              <select id="channel-kind" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+                <option value="slack">Slack</option>
+                <option value="discord">Discord</option>
+                <option value="telegram">Telegram</option>
+                <option value="webhook">Custom webhook</option>
+              </select>
+            </label>
+          </div>
+          <label class="block text-xs text-[#aab8b7]">Webhook URL
+            <input id="channel-url" type="url" required maxlength="2000" placeholder="https://hooks.slack.com/services/..." class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <div id="channel-chat-field" class="hidden">
+            <label class="block text-xs text-[#aab8b7]">Telegram chat ID
+              <input id="channel-chat-id" type="text" maxlength="120" placeholder="-1001234567890" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-2 text-sm text-white outline-none focus:border-[#66d8c6]">
+            </label>
+          </div>
+          <p class="text-[11px] text-[#718180]">Telegram URL is https://api.telegram.org/bot&lt;token&gt;/sendMessage plus the chat ID above. Slack and Discord use their incoming webhook URL.</p>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p id="channels-message" role="status" aria-live="polite" class="hidden text-xs"></p>
+            <button type="submit" class="border border-[#3b4b4c] px-4 py-2 text-xs font-medium text-[#d5dfdd] hover:border-[#66d8c6] hover:text-white">Add channel</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </dialog>
+
+  <main class="mx-auto max-w-[1320px] px-4 py-6 sm:px-5 lg:px-8 lg:py-8">
+    <section id="login-view" class="mx-auto mt-10 max-w-md">
+      <div class="panel p-7 sm:p-9">
+        <p class="mono text-xs uppercase tracking-[.16em] text-[#66d8c6]">Restricted console</p>
+        <h1 class="mt-3 text-2xl font-semibold">Sign in to Sentinel</h1>
+        <form id="login-form" class="mt-7 space-y-4">
+          <label class="block text-xs text-[#aab8b7]">API address
+            <input id="api-url" type="url" required value="http://127.0.0.1:8000" autocomplete="url" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Username
+            <input id="username" type="text" required minlength="3" autocomplete="username" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <label class="block text-xs text-[#aab8b7]">Password
+            <input id="password" type="password" required autocomplete="current-password" class="mt-2 w-full border border-[#344344] bg-[#0d1415] px-3 py-3 text-sm text-white outline-none focus:border-[#66d8c6]">
+          </label>
+          <p id="login-error" role="alert" class="hidden text-sm text-[#ef7771]"></p>
+          <button type="submit" class="w-full bg-[#c1e879] px-4 py-3 text-sm font-semibold text-[#111715] transition hover:bg-[#d0f18b]">Continue</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="dashboard-view" class="hidden">
+      <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="mono text-[11px] uppercase tracking-[.17em] text-[#66d8c6]">Host overview</p>
+          <h1 class="mt-2 text-2xl font-semibold sm:text-3xl">Server health &amp; security</h1>
+        </div>
+        <div class="flex flex-col items-start gap-2 sm:items-end">
+          <div class="flex flex-wrap items-center gap-2">
+            <label for="host-select" class="text-[10px] uppercase tracking-[.16em] text-[#718180]">Host</label>
+            <select id="host-select" class="glass-input border px-3 py-1.5 text-xs text-[#d5dfdd] outline-none">
+              <option value="">All hosts</option>
+            </select>
+          </div>
+          <div id="range-filters" role="group" aria-label="Time range" class="flex flex-wrap gap-1">
+            <button type="button" class="range-filter px-3 py-1.5 text-xs" data-hours="1" data-window-minutes="30" aria-pressed="true">30m</button>
+            <button type="button" class="range-filter px-3 py-1.5 text-xs" data-hours="1" data-window-minutes="60" aria-pressed="false">1h</button>
+            <button type="button" class="range-filter px-3 py-1.5 text-xs" data-hours="6" data-window-minutes="360" aria-pressed="false">6h</button>
+            <button type="button" class="range-filter px-3 py-1.5 text-xs" data-hours="24" data-window-minutes="1440" aria-pressed="false">24h</button>
+            <button type="button" class="range-filter px-3 py-1.5 text-xs" data-hours="168" data-window-minutes="10080" aria-pressed="false">7d</button>
+          </div>
+          <p id="last-updated" class="mono text-xs text-[#91a1a1]">Waiting for first sample</p>
+        </div>
+      </div>
+
+      <section aria-labelledby="health-heading">
+        <div class="mb-3 flex items-baseline justify-between gap-3">
+          <h2 id="health-heading" class="text-sm font-semibold">System health</h2>
+          <p class="text-xs text-[#718180]">Latest collected metrics</p>
+        </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="panel min-h-[132px] p-4 sm:p-5">
+          <p class="text-xs text-[#91a1a1]">CPU utilization</p>
+          <p id="cpu-value" class="metric-value mt-4 text-3xl font-semibold">--<span class="ml-1 text-sm font-normal text-[#91a1a1]">%</span></p>
+          <div class="mt-4 h-1 bg-[#283535]"><div id="cpu-bar" class="h-full w-0 bg-[#c1e879] transition-all"></div></div>
+        </article>
+        <article class="panel min-h-[132px] p-4 sm:p-5">
+          <p class="text-xs text-[#91a1a1]">Memory in use</p>
+          <p id="memory-value" class="metric-value mt-4 text-3xl font-semibold">--<span class="ml-1 text-sm font-normal text-[#91a1a1]">%</span></p>
+          <div class="mt-4 h-1 bg-[#283535]"><div id="memory-bar" class="h-full w-0 bg-[#66d8c6] transition-all"></div></div>
+        </article>
+        <article class="panel min-h-[132px] p-4 sm:p-5">
+          <p class="text-xs text-[#91a1a1]">Disk used</p>
+          <p id="disk-value" class="metric-value mt-4 text-3xl font-semibold">--<span class="ml-1 text-sm font-normal text-[#91a1a1]">%</span></p>
+          <div class="mt-4 h-1 bg-[#283535]"><div id="disk-bar" class="h-full w-0 bg-[#f0a36d] transition-all"></div></div>
+        </article>
+        <article class="panel min-h-[132px] p-4 sm:p-5">
+          <p class="text-xs text-[#91a1a1]">System temperature</p>
+          <p id="temperature-value" class="metric-value mt-5 text-2xl font-semibold">--</p>
+          <p class="mt-2 text-[11px] text-[#718180]">Windows ACPI thermal zone</p>
+        </article>
+      </div>
+      </section>
+
+      <div class="mt-5 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
+        <section class="panel min-w-0 p-4 sm:p-5 lg:p-6">
+          <div class="mb-5 flex items-center justify-between gap-4">
+            <div><h2 class="text-sm font-semibold">Resource history</h2><p id="history-range-label" class="mt-1 text-xs text-[#91a1a1]">Last 30 minutes · drag to browse older samples</p></div>
+            <div class="flex items-center gap-1" role="group" aria-label="Chart controls">
+              <button id="chart-reset-zoom" type="button" class="chart-control chart-control-reset" aria-label="Reset chart zoom" title="Reset zoom">Reset</button>
+            </div>
+          </div>
+          <div class="chart-frame" title="Scroll to zoom; drag to pan">
+            <canvas id="history-chart" aria-label="CPU and memory usage over time"></canvas>
+            <p id="chart-empty" class="hidden absolute inset-0 grid place-items-center text-sm text-[#718180]">No metric history received</p>
+          </div>
+        </section>
+        <section class="panel min-w-0 p-4 sm:p-5 lg:p-6">
+          <div class="mb-5 flex items-center justify-between gap-4">
+            <div><h2 class="text-sm font-semibold">Network counters</h2><p class="mt-1 text-xs text-[#91a1a1]">Cumulative since host boot</p></div>
+            <span class="mono text-[10px] uppercase tracking-wider text-[#718180]">Cumulative</span>
+          </div>
+          <div class="grid grid-cols-2 gap-6">
+            <div><p class="text-xs text-[#91a1a1]">Bytes sent</p><p id="network-sent" class="mono mt-2 text-xl text-[#c1e879]">--</p></div>
+            <div><p class="text-xs text-[#91a1a1]">Bytes received</p><p id="network-received" class="mono mt-2 text-xl text-[#66d8c6]">--</p></div>
+          </div>
+          <div class="mt-6 border-t border-[#293637] pt-5">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-xs text-[#91a1a1]">Active alerts</p>
+              <span id="alerts-value" class="mono text-lg font-semibold text-[#ef7771]">--</span>
+            </div>
+            <ul id="alert-list" aria-live="polite" class="alerts-scroll mt-3 space-y-2 pr-2 text-sm text-[#d5dfdd]"></ul>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel mt-3">
+        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-[#293637] px-5 py-5 sm:px-6">
+          <div><h2 id="findings-heading" class="text-sm font-semibold">Security findings</h2><p class="mt-1 text-xs text-[#91a1a1]">Grouped by source; select a category to narrow the list</p></div>
+          <span id="finding-count" class="mono text-xs text-[#91a1a1]" aria-live="polite">No findings recorded</span>
+        </div>
+        <div id="finding-filters" role="group" aria-label="Filter security findings" class="flex gap-2 overflow-x-auto border-b border-[#293637] px-4 py-3 sm:px-5 lg:px-6">
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="all" aria-pressed="true">All <span id="finding-count-all" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="ports" aria-pressed="false">Ports <span id="finding-count-ports" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="logins" aria-pressed="false">Logins <span id="finding-count-logins" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="packages" aria-pressed="false">Packages <span id="finding-count-packages" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="files" aria-pressed="false">Files <span id="finding-count-files" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-finding-filter="other" aria-pressed="false">Other <span id="finding-count-other" class="mono ml-1">0</span></button>
+        </div>
+        <div class="findings-scroll">
+          <table class="w-full min-w-[720px] border-collapse text-left text-xs">
+            <thead class="bg-[#111819] text-[10px] uppercase tracking-[.12em] text-[#91a1a1]"><tr>
+              <th class="px-5 py-3 font-medium">Type</th><th class="px-5 py-3 font-medium">Finding</th><th class="px-5 py-3 font-medium">Details</th><th class="px-5 py-3 font-medium">Severity</th><th class="px-5 py-3 font-medium">Observed</th>
+            </tr></thead>
+            <tbody id="findings-body" aria-live="polite" class="divide-y divide-[#293637]"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel mt-3" aria-labelledby="alert-history-heading">
+        <div class="flex flex-wrap items-end justify-between gap-3 border-b border-[#293637] px-5 py-5 sm:px-6">
+          <div><h2 id="alert-history-heading" class="text-sm font-semibold">Alert history</h2><p class="mt-1 text-xs text-[#91a1a1]">Stored alerts and their acknowledgement state</p></div>
+          <span id="alert-history-count" class="mono text-xs text-[#91a1a1]" aria-live="polite">No alerts recorded</span>
+        </div>
+        <div id="alert-status-filters" role="group" aria-label="Filter alerts by status" class="flex gap-2 overflow-x-auto border-b border-[#293637] px-4 py-3 sm:px-5 lg:px-6">
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-alert-filter="all" aria-pressed="true">All <span id="alert-count-all" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-alert-filter="new" aria-pressed="false">New <span id="alert-count-new" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-alert-filter="acknowledged" aria-pressed="false">Acknowledged <span id="alert-count-acknowledged" class="mono ml-1">0</span></button>
+          <button type="button" class="finding-filter shrink-0 border border-[#344344] px-3 py-2 text-xs text-[#91a1a1]" data-alert-filter="resolved" aria-pressed="false">Resolved <span id="alert-count-resolved" class="mono ml-1">0</span></button>
+        </div>
+        <div class="findings-scroll">
+          <table class="w-full min-w-[860px] border-collapse text-left text-xs">
+            <thead class="bg-[#111819] text-[10px] uppercase tracking-[.12em] text-[#91a1a1]"><tr>
+              <th class="px-5 py-3 font-medium">Status</th><th class="px-5 py-3 font-medium">Host</th><th class="px-5 py-3 font-medium">Alert</th><th class="px-5 py-3 font-medium">Category</th><th class="px-5 py-3 font-medium">Severity</th><th class="px-5 py-3 font-medium">First seen</th><th class="px-5 py-3 font-medium">Last seen</th><th class="px-5 py-3 font-medium">Actions</th>
+            </tr></thead>
+            <tbody id="alert-history-body" aria-live="polite" class="divide-y divide-[#293637]"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const loginView = document.querySelector("#login-view");
+    const dashboardView = document.querySelector("#dashboard-view");
+    const tokenKey = "sentinelAccessToken";
+    const apiKey = "sentinelApiAddress";
+    // The desktop app keeps the token in local storage so a restart stays signed in; the
+    // browser keeps it in the tab session so it never touches the disk.
+    const desktopMode = new URLSearchParams(location.search).get("desktop") === "1";
+    const tokenStore = desktopMode ? localStorage : sessionStorage;
+    const apiInput = document.querySelector("#api-url");
+    let chart;
+    let refreshTimer;
+    let activeFindingFilter = "all";
+    let currentDashboardData = null;
+    let chartPanningBound = false;
+    let chartUserNavigated = false;
+    let currentHistoryPoints = [];
+    let chartWindowMilliseconds = 30 * 60 * 1000;
+    let activeRange = { hours: 1, windowMinutes: 30 };
+    let selectedHost = "";
+    let hostOptionsSignature = "";
+    const chartZoomAvailable = typeof ChartZoom !== "undefined";
+
+    // ---- Localisation (English is the source language; Thai strings are hand written) ----
+    const languageStorageKey = "sentinelLanguage";
+    let currentLanguage = localStorage.getItem(languageStorageKey) === "th" ? "th" : "en";
+
+    const THAI = {
+      "Server observability": "การตรวจสอบเซิร์ฟเวอร์",
+      "Account": "บัญชี",
+      "Account settings": "ตั้งค่าบัญชี",
+      "Refresh data": "รีเฟรชข้อมูล",
+      "Settings": "ตั้งค่า",
+      "Sign out": "ออกจากระบบ",
+      "Language": "ภาษา",
+      "Restricted console": "คอนโซลจำกัดสิทธิ์",
+      "Sign in to Sentinel": "เข้าสู่ระบบ Sentinel",
+      "API address": "ที่อยู่ API",
+      "Username": "ชื่อผู้ใช้",
+      "Password": "รหัสผ่าน",
+      "Continue": "ดำเนินการต่อ",
+      "Signing in...": "กำลังเข้าสู่ระบบ…",
+      "Username or password is incorrect": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      "Sign-in failed ({status})": "เข้าสู่ระบบไม่สำเร็จ ({status})",
+      "Session expired. Sign in again.": "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่",
+      "Confirm your current password to save changes.": "ยืนยันรหัสผ่านปัจจุบันเพื่อบันทึกการเปลี่ยนแปลง",
+      "Current password": "รหัสผ่านปัจจุบัน",
+      "New username": "ชื่อผู้ใช้ใหม่",
+      "New password": "รหัสผ่านใหม่",
+      "(optional)": "(ไม่บังคับ)",
+      "(optional, at least 12 characters)": "(ไม่บังคับ อย่างน้อย 12 ตัวอักษร)",
+      "Confirm new password": "ยืนยันรหัสผ่านใหม่",
+      "Cancel": "ยกเลิก",
+      "Save changes": "บันทึกการเปลี่ยนแปลง",
+      "Saving...": "กำลังบันทึก…",
+      "Enter a new username or password.": "กรอกชื่อผู้ใช้หรือรหัสผ่านใหม่",
+      "New passwords do not match.": "รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน",
+      "Account updated. This session remains active; use the new credentials next time.": "อัปเดตบัญชีแล้ว เซสชันนี้ยังใช้งานได้ ให้ใช้ข้อมูลใหม่ในการเข้าสู่ระบบครั้งถัดไป",
+      "Could not update account.": "อัปเดตบัญชีไม่สำเร็จ",
+      "Host overview": "ภาพรวมโฮสต์",
+      "Server health & security": "สุขภาพและความปลอดภัยของเซิร์ฟเวอร์",
+      "All hosts": "ทุกโฮสต์",
+      "All hosts (global)": "ทุกโฮสต์ (ส่วนกลาง)",
+      "Time range": "ช่วงเวลา",
+      "30m": "30 นาที",
+      "1h": "1 ชม.",
+      "6h": "6 ชม.",
+      "24h": "24 ชม.",
+      "7d": "7 วัน",
+      "Waiting for first sample": "กำลังรอข้อมูลชุดแรก",
+      "System health": "สุขภาพระบบ",
+      "Latest collected metrics": "ข้อมูลล่าสุดที่เก็บได้",
+      "CPU utilization": "การใช้งาน CPU",
+      "Memory in use": "หน่วยความจำที่ใช้",
+      "Disk used": "พื้นที่ดิสก์ที่ใช้",
+      "System temperature": "อุณหภูมิระบบ",
+      "Windows ACPI thermal zone": "โซนความร้อน ACPI ของ Windows",
+      "Resource history": "ประวัติการใช้ทรัพยากร",
+      "Reset": "รีเซ็ต",
+      "Reset zoom": "รีเซ็ตรีซูม",
+      "Reset chart zoom": "รีเซ็ตการซูมกราฟ",
+      "No metric history received": "ยังไม่ได้รับประวัติข้อมูล",
+      "Scroll to zoom; drag to pan": "เลื่อนล้อเพื่อซูม ลากเพื่อเลื่อน",
+      "CPU and memory usage over time": "การใช้งาน CPU และหน่วยความจำตามเวลา",
+      "Chart controls": "ตัวควบคุมกราฟ",
+      "Network counters": "ตัวนับเครือข่าย",
+      "Cumulative since host boot": "สะสมตั้งแต่เปิดเครื่องโฮสต์",
+      "Cumulative": "สะสม",
+      "Bytes sent": "ข้อมูลที่ส่ง",
+      "Bytes received": "ข้อมูลที่รับ",
+      "Active alerts": "การแจ้งเตือนที่ค้างอยู่",
+      "No active alerts": "ไม่มีการแจ้งเตือนที่ค้างอยู่",
+      "Security findings": "สิ่งที่ตรวจพบด้านความปลอดภัย",
+      "Grouped by source; select a category to narrow the list": "จัดกลุ่มตามแหล่งที่มา เลือกหมวดเพื่อจำกัดรายการ",
+      "No findings recorded": "ยังไม่มีสิ่งที่ตรวจพบ",
+      "No findings recorded in the latest results": "ไม่พบสิ่งที่ควรตรวจสอบในผลล่าสุด",
+      "No findings in this category": "ไม่มีรายการในหมวดนี้",
+      "Filter security findings": "กรองสิ่งที่ตรวจพบ",
+      "All": "ทั้งหมด",
+      "Ports": "พอร์ต",
+      "Logins": "การเข้าสู่ระบบ",
+      "Packages": "แพ็กเกจ",
+      "Files": "ไฟล์",
+      "Other": "อื่น ๆ",
+      "Type": "ประเภท",
+      "Finding": "สิ่งที่พบ",
+      "Details": "รายละเอียด",
+      "Severity": "ความรุนแรง",
+      "Observed": "เวลาที่พบ",
+      "Alert history": "ประวัติการแจ้งเตือน",
+      "Stored alerts and their acknowledgement state": "การแจ้งเตือนที่บันทึกไว้และสถานะการรับทราบ",
+      "No alerts recorded": "ยังไม่มีการแจ้งเตือน",
+      "No alerts stored yet": "ยังไม่มีการแจ้งเตือนที่บันทึกไว้",
+      "Filter alerts by status": "กรองการแจ้งเตือนตามสถานะ",
+      "New": "ใหม่",
+      "Acknowledged": "รับทราบแล้ว",
+      "Resolved": "แก้ไขแล้ว",
+      "Status": "สถานะ",
+      "Host": "โฮสต์",
+      "Alert": "การแจ้งเตือน",
+      "Category": "หมวด",
+      "First seen": "พบครั้งแรก",
+      "Last seen": "พบล่าสุด",
+      "Actions": "จัดการ",
+      "Acknowledge": "รับทราบ",
+      "Resolve": "แก้ไขแล้ว",
+      "Reopen": "เปิดใหม่",
+      "Could not update the alert": "อัปเดตการแจ้งเตือนไม่สำเร็จ",
+      "Monitoring settings": "ตั้งค่าการตรวจสอบ",
+      "Thresholds, custom alert rules, and the IP allowlist used to evaluate alerts.": "เกณฑ์การแจ้งเตือน กฎที่กำหนดเอง และรายการ IP ที่ใช้ประเมินการแจ้งเตือน",
+      "Close": "ปิด",
+      "System thresholds": "เกณฑ์ของระบบ",
+      "An alert fires when the latest sample reaches these values.": "ระบบจะแจ้งเตือนเมื่อข้อมูลล่าสุดถึงค่าที่กำหนด",
+      "Scope": "ขอบเขต",
+      "Remove host override": "ลบค่าที่ตั้งเฉพาะโฮสต์",
+      "CPU percent": "CPU (เปอร์เซ็นต์)",
+      "Memory percent": "หน่วยความจำ (เปอร์เซ็นต์)",
+      "Disk percent": "ดิสก์ (เปอร์เซ็นต์)",
+      "Failed login count": "จำนวนครั้งที่เข้าสู่ระบบล้มเหลว",
+      "Failed login window (minutes)": "ช่วงเวลานับการเข้าสู่ระบบล้มเหลว (นาที)",
+      "Save thresholds": "บันทึกเกณฑ์",
+      "Data retention": "การเก็บข้อมูล",
+      "MongoDB deletes data older than these ages. 0 keeps it forever.": "MongoDB จะลบข้อมูลที่เก่ากว่าจำนวนวันนี้ (0 = เก็บตลอดไป)",
+      "Metrics (days)": "เมตริก (วัน)",
+      "Security events (days)": "เหตุการณ์ความปลอดภัย (วัน)",
+      "Scan results (days)": "ผลสแกน (วัน)",
+      "Save retention": "บันทึกการเก็บข้อมูล",
+      "Retention saved.": "บันทึกการเก็บข้อมูลแล้ว",
+      "Could not save retention.": "บันทึกค่าการเก็บข้อมูลไม่สำเร็จ",
+      "Custom alert rules": "กฎแจ้งเตือนที่กำหนดเอง",
+      "Each rule is compared against the newest metric sample.": "แต่ละกฎจะถูกเทียบกับข้อมูลเมตริกล่าสุด",
+      "Rule name": "ชื่อกฎ",
+      "Metric": "เมตริก",
+      "Applies to": "ใช้กับ",
+      "Operator": "ตัวดำเนินการ",
+      "Threshold": "ค่าเกณฑ์",
+      "Add rule": "เพิ่มกฎ",
+      "IP allowlist": "รายการ IP ที่อนุญาต",
+      "Failed-login alerts ignore these addresses.": "การแจ้งเตือนล็อกอินล้มเหลวจะข้ามที่อยู่เหล่านี้",
+      "IP address": "ที่อยู่ IP",
+      "Label": "ป้ายชื่อ",
+      "Add address": "เพิ่มที่อยู่",
+      "Alert notifications": "ช่องทางแจ้งเตือน",
+      "Sent when alerts are active; identical alerts are not resent. Webhook URLs are stored on the server and shown masked.": "ส่งเมื่อมีการแจ้งเตือนที่ค้างอยู่ โดยจะไม่ส่งข้อความที่ไม่เปลี่ยนซ้ำ URL ของเว็บฮุกถูกเก็บฝั่งเซิร์ฟเวอร์และแสดงแบบปิดบัง",
+      "Channel name": "ชื่อช่องทาง",
+      "Type": "ชนิด",
+      "Custom webhook": "เว็บฮุกกำหนดเอง",
+      "Webhook URL": "URL ของเว็บฮุก",
+      "Telegram chat ID": "Chat ID ของ Telegram",
+      "Telegram URL is https://api.telegram.org/bot<token>/sendMessage plus the chat ID above. Slack and Discord use their incoming webhook URL.": "URL ของ Telegram คือ https://api.telegram.org/bot<token>/sendMessage แล้วใส่ Chat ID ด้านบน ส่วน Slack และ Discord ใช้ URL ของ incoming webhook",
+      "Add channel": "เพิ่มช่องทาง",
+      "Test": "ทดสอบ",
+      "Delete": "ลบ",
+      "Disable": "ปิดใช้งาน",
+      "Enable": "เปิดใช้งาน",
+      "No custom rules yet.": "ยังไม่มีกฎที่กำหนดเอง",
+      "No allowlisted addresses yet.": "ยังไม่มีที่อยู่ในรายการอนุญาต",
+      "No notification channels yet.": "ยังไม่มีช่องทางแจ้งเตือน",
+      "Rule created.": "สร้างกฎแล้ว",
+      "Rule deleted.": "ลบกฎแล้ว",
+      "Rule enabled.": "เปิดใช้งานกฎแล้ว",
+      "Rule disabled.": "ปิดใช้งานกฎแล้ว",
+      "Address added.": "เพิ่มที่อยู่แล้ว",
+      "Address removed.": "ลบที่อยู่แล้ว",
+      "Channel added.": "เพิ่มช่องทางแล้ว",
+      "Channel deleted.": "ลบช่องทางแล้ว",
+      "Channel enabled.": "เปิดใช้งานช่องทางแล้ว",
+      "Channel disabled.": "ปิดใช้งานช่องทางแล้ว",
+      "Test delivery failed.": "ส่งข้อความทดสอบไม่สำเร็จ",
+      "Test notification sent to {name}.": "ส่งข้อความทดสอบไปยัง {name} แล้ว",
+      "Global thresholds saved.": "บันทึกเกณฑ์ส่วนกลางแล้ว",
+      "Thresholds saved for {host}.": "บันทึกเกณฑ์ของ {host} แล้ว",
+      "Removed the override for {host}.": "ลบค่าที่ตั้งเฉพาะ {host} แล้ว",
+      "Could not load settings.": "โหลดการตั้งค่าไม่สำเร็จ",
+      "Could not load thresholds.": "โหลดเกณฑ์ไม่สำเร็จ",
+      "Could not save thresholds.": "บันทึกเกณฑ์ไม่สำเร็จ",
+      "Could not remove the override.": "ลบค่าที่ตั้งเฉพาะโฮสต์ไม่สำเร็จ",
+      "Could not create the rule.": "สร้างกฎไม่สำเร็จ",
+      "Could not update the rule.": "อัปเดตกฎไม่สำเร็จ",
+      "Could not delete the rule.": "ลบกฎไม่สำเร็จ",
+      "Could not add the address.": "เพิ่มที่อยู่ไม่สำเร็จ",
+      "Could not remove the address.": "ลบที่อยู่ไม่สำเร็จ",
+      "Could not add the channel.": "เพิ่มช่องทางไม่สำเร็จ",
+      "Could not update the channel.": "อัปเดตช่องทางไม่สำเร็จ",
+      "Could not delete the channel.": "ลบช่องทางไม่สำเร็จ",
+      "all hosts": "ทุกโฮสต์",
+      "disabled": "ปิดใช้งาน",
+      "Applies to every host without its own override.": "ใช้กับทุกโฮสต์ที่ยังไม่มีค่าของตัวเอง",
+      "{host} uses its own values; other hosts keep the global defaults.": "{host} ใช้ค่าของตัวเอง ส่วนโฮสต์อื่นยังใช้ค่าเริ่มต้นส่วนกลาง",
+      "{host} falls back to the global defaults. Saving stores host-specific values.": "{host} ยังใช้ค่าเริ่มต้นส่วนกลาง การบันทึกจะเก็บค่าเฉพาะโฮสต์นี้",
+      "Live": "สด",
+      "Connecting": "กำลังเชื่อมต่อ",
+      "Stale data": "ข้อมูลล่าช้า",
+      "No metrics": "ไม่มีข้อมูลเมตริก",
+      "API unavailable": "เชื่อมต่อ API ไม่ได้",
+      "No metric sample received": "ยังไม่ได้รับข้อมูลเมตริก",
+      "Not available": "ยังไม่มีข้อมูล",
+      "Check API address, CORS, and MongoDB status": "ตรวจสอบที่อยู่ API, CORS และสถานะ MongoDB",
+      "Updated {time}{host}": "อัปเดต {time}{host}",
+      "Last {count} minutes": "{count} นาทีล่าสุด",
+      "Last {count} hours": "{count} ชั่วโมงล่าสุด",
+      "Last {count} days": "{count} วันล่าสุด",
+      "drag to browse older samples": "ลากเพื่อดูข้อมูลเก่ากว่า",
+      "{n}s ago": "{n} วินาทีที่แล้ว",
+      "{n}m ago": "{n} นาทีที่แล้ว",
+      "{n}h ago": "{n} ชั่วโมงที่แล้ว",
+      "Showing {shown} of {total}": "แสดง {shown} จาก {total} รายการ",
+      "{count} records": "{count} รายการ",
+      "{count} alerts": "{count} รายการ",
+      "No {status} alerts": "ไม่มีการแจ้งเตือนสถานะ{status}",
+      "Listening port": "พอร์ตที่เปิดอยู่",
+      "Package audit": "การตรวจแพ็กเกจ",
+      "Outdated Python package": "แพ็กเกจ Python ล้าสมัย",
+      "Vulnerable Python package": "แพ็กเกจ Python มีช่องโหว่",
+      "Package check failed": "ตรวจแพ็กเกจไม่สำเร็จ",
+      "Vulnerability check unavailable": "ตรวจช่องโหว่ยังใช้ไม่ได้",
+      "Vulnerability check failed": "ตรวจช่องโหว่ไม่สำเร็จ",
+      "System update available": "มีอัปเดตระบบปฏิบัติการ",
+      "System update check failed": "ตรวจอัปเดตระบบไม่สำเร็จ",
+      "cached update list": "รายการอัปเดตที่บันทึกไว้",
+      "fixes": "เวอร์ชันที่แก้ไข",
+      "File integrity": "ความสมบูรณ์ของไฟล์",
+      "Failed login": "การเข้าสู่ระบบล้มเหลว",
+      "User": "ผู้ใช้",
+      "Event ID": "รหัสเหตุการณ์",
+      "Too many attempts. Please try again in {seconds}s.": "พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณาลองใหม่ในอีก {seconds} วินาที",
+      "Account temporarily locked. Try again in {seconds}s.": "บัญชีถูกล็อกชั่วคราวจากการใส่รหัสผ่านผิดหลายครั้ง กรุณาลองใหม่ในอีก {seconds} วินาที",
+      "Too many attempts. Please try again later.": "พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง",
+      "Port enumeration unavailable": "ไม่สามารถตรวจพอร์ตได้",
+      "Authentication log unavailable": "ไม่พบบันทึกการยืนยันตัวตน",
+      " · not allowlisted": " · ไม่อยู่ในรายการอนุญาต",
+      " · allowlisted": " · อยู่ในรายการอนุญาต",
+      "Port {port} · {process} · not allowlisted": "พอร์ต {port} · {process} · ไม่อยู่ในรายการอนุญาต",
+      "Security event": "เหตุการณ์ความปลอดภัย",
+      "Port scan unavailable": "ไม่สามารถสแกนพอร์ตได้",
+      "Port": "พอร์ต",
+      "Uncategorized alert": "การแจ้งเตือนที่ไม่ระบุหมวด",
+      "Alert rule": "กฎแจ้งเตือน",
+      "Metric": "เมตริก",
+      "Failed logins from {ip}: {count}": "เข้าสู่ระบบล้มเหลวจาก {ip}: {count}",
+      "Failed logins: {count}": "เข้าสู่ระบบล้มเหลว: {count}",
+      "Memory": "หน่วยความจำ",
+      "CPU": "CPU"
+    };
+
+    const metricLabels = {
+      cpu_percent: "CPU",
+      memory_percent: "หน่วยความจำ",
+      disk_percent: "ดิสก์",
+      network_bytes_sent: "ข้อมูลที่ส่ง",
+      network_bytes_received: "ข้อมูลที่รับ",
+      cpu_temp_celsius: "อุณหภูมิ CPU",
+      system_temp_celsius: "อุณหภูมิระบบ"
+    };
+    const severityLabels = {
+      critical: "วิกฤต",
+      warning: "เตือน",
+      high: "สูง",
+      medium: "ปานกลาง",
+      low: "ต่ำ",
+      info: "ข้อมูล"
+    };
+    const categoryLabels = {
+      system_threshold: "เกณฑ์ระบบ",
+      custom_rule: "กฎกำหนดเอง",
+      security_event: "เหตุการณ์ความปลอดภัย",
+      unknown_listening_port: "พอร์ตที่ไม่อนุญาต",
+      failed_login_threshold: "ล็อกอินล้มเหลว",
+      port_scan_unavailable: "ตรวจพอร์ตไม่ได้",
+      modified_file: "ไฟล์ถูกแก้ไข",
+      failed_login: "เข้าสู่ระบบล้มเหลว",
+      unauthorized_connection: "การเชื่อมต่อที่ไม่อนุญาต",
+      process_started: "โพรเซสเริ่มทำงาน"
+    };
+    const categoryEnglish = {
+      system_threshold: "System threshold",
+      custom_rule: "Custom rule",
+      security_event: "Security event",
+      unknown_listening_port: "Unapproved port",
+      failed_login_threshold: "Failed login threshold",
+      port_scan_unavailable: "Port scan unavailable",
+      modified_file: "Modified file",
+      failed_login: "Failed login",
+      unauthorized_connection: "Unauthorized connection",
+      process_started: "Process started"
+    };
+    const statusLabels = { new: "ใหม่", acknowledged: "รับทราบแล้ว", resolved: "แก้ไขแล้ว" };
+    const channelKindLabels = { slack: "Slack", discord: "Discord", telegram: "Telegram", webhook: "เว็บฮุกกำหนดเอง" };
+
+    function t(key, vars) {
+      const template = currentLanguage === "th" && Object.prototype.hasOwnProperty.call(THAI, key) ? THAI[key] : key;
+      if (!vars) return template;
+      return template.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ""));
+    }
+
+    function localised(map, value) {
+      return currentLanguage === "th" && map[value] ? map[value] : value;
+    }
+
+    function metricLabel(metric) { return localised(metricLabels, metric); }
+    function severityLabel(severity) { return localised(severityLabels, severity); }
+    function categoryLabel(category) {
+      if (currentLanguage === "th") return localised(categoryLabels, category);
+      return categoryEnglish[category] || category;
+    }
+    function statusLabel(status) { return localised(statusLabels, status); }
+    function channelKindLabel(kind) { return localised(channelKindLabels, kind); }
+
+    const translatedTextNodes = new Map();
+    const translatedAttributes = new WeakMap();
+
+    function translateStaticText() {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.tagName === "SCRIPT" || parent.tagName === "STYLE") return NodeFilter.FILTER_REJECT;
+          return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        const original = translatedTextNodes.has(node) ? translatedTextNodes.get(node) : node.nodeValue;
+        const key = original.trim();
+        if (currentLanguage === "th" && Object.prototype.hasOwnProperty.call(THAI, key)) {
+          translatedTextNodes.set(node, original);
+          const leading = original.match(/^\s*/)[0];
+          const trailing = original.match(/\s*$/)[0];
+          node.nodeValue = leading + THAI[key] + trailing;
+        } else if (translatedTextNodes.has(node)) {
+          node.nodeValue = original;
+        }
+      }
+    }
+
+    function translateStaticAttributes() {
+      for (const element of document.querySelectorAll("[placeholder], [title], [aria-label]")) {
+        let originals = translatedAttributes.get(element);
+        if (!originals) {
+          originals = {
+            placeholder: element.getAttribute("placeholder"),
+            title: element.getAttribute("title"),
+            "aria-label": element.getAttribute("aria-label")
+          };
+          translatedAttributes.set(element, originals);
+        }
+        for (const attribute of ["placeholder", "title", "aria-label"]) {
+          const original = originals[attribute];
+          if (!original) continue;
+          const key = original.trim();
+          element.setAttribute(
+            attribute,
+            currentLanguage === "th" && Object.prototype.hasOwnProperty.call(THAI, key) ? THAI[key] : original
+          );
+        }
+      }
+    }
+
+    function refreshLocalisedContent() {
+      if (currentDashboardData) renderFindings(currentDashboardData);
+      renderAlertHistory();
+      hostOptionsSignature = "";
+      applyRange(activeRange);
+      if (tokenStore.getItem(tokenKey)) refreshDashboard();
+    }
+
+    function setLanguage(language, options = {}) {
+      currentLanguage = language === "th" ? "th" : "en";
+      if (options.persist !== false) localStorage.setItem(languageStorageKey, currentLanguage);
+      document.documentElement.lang = currentLanguage;
+      document.title = currentLanguage === "th" ? "Sentinel | ตรวจสอบเซิร์ฟเวอร์" : "Sentinel | Server Monitor";
+      for (const button of document.querySelectorAll("[data-language]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.language === currentLanguage));
+      }
+      translateStaticText();
+      translateStaticAttributes();
+      if (options.refresh !== false) refreshLocalisedContent();
+    }
+
+    if (chartZoomAvailable) Chart.register(ChartZoom);
+    for (const control of document.querySelectorAll("[aria-label='Chart controls'] button")) {
+      control.disabled = !chartZoomAvailable;
+    }
+
+    apiInput.value = tokenStore.getItem(apiKey) || apiInput.value;
+
+    function apiAddress() {
+      return apiInput.value.trim().replace(/\/+$/, "");
+    }
+
+    async function apiRequest(path, options = {}) {
+      const response = await fetch(`${apiAddress()}/api/v1${path}`, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${tokenStore.getItem(tokenKey)}`
+        }
+      });
+      if (response.status === 401) {
+        tokenStore.removeItem(tokenKey);
+        showLogin(t("Session expired. Sign in again."));
+      }
+      if (response.status === 204) return null;
+      if (!response.ok) {
+        let detail = "";
+        try {
+          detail = (await response.json()).detail || "";
+        } catch {
+          detail = "";
+        }
+        throw new Error(typeof detail === "string" ? detail : `API request failed (${response.status})`);
+      }
+      return response.json();
+    }
+
+    async function loadCurrentAccount() {
+      const account = await apiRequest("/auth/me");
+      const username = typeof account.username === "string" ? account.username.trim() : "";
+      const identity = document.querySelector("#account-identity");
+      if (!username) {
+        identity.classList.add("hidden");
+        return;
+      }
+      document.querySelector("#account-name").textContent = username;
+      identity.classList.remove("hidden");
+    }
+
+    function showLogin(message = "") {
+      clearTimeout(refreshTimer);
+      const accountDialog = document.querySelector("#account-dialog");
+      if (accountDialog.open) accountDialog.close();
+      document.querySelector("#account-form").reset();
+      document.querySelector("#account-identity").classList.add("hidden");
+      document.querySelector("#account-name").textContent = "";
+      loginView.classList.remove("hidden");
+      dashboardView.classList.add("hidden");
+      document.querySelector("#refresh-button").classList.add("hidden");
+      document.querySelector("#settings-button").classList.add("hidden");
+      document.querySelector("#logout-button").classList.add("hidden");
+      const settingsDialogElement = document.querySelector("#settings-dialog");
+      if (settingsDialogElement.open) settingsDialogElement.close();
+      const error = document.querySelector("#login-error");
+      error.textContent = message;
+      error.classList.toggle("hidden", !message);
+    }
+
+    function showDashboard() {
+      loginView.classList.add("hidden");
+      dashboardView.classList.remove("hidden");
+      document.querySelector("#refresh-button").classList.remove("hidden");
+      document.querySelector("#settings-button").classList.remove("hidden");
+      document.querySelector("#logout-button").classList.remove("hidden");
+    }
+
+    function setMetric(id, barId, value) {
+      const output = document.querySelector(`#${id}`);
+      const amount = Number.isFinite(value) ? value : null;
+      output.firstChild.textContent = amount === null ? "--" : amount.toFixed(1);
+      if (barId) document.querySelector(`#${barId}`).style.width = `${Math.max(0, Math.min(100, amount ?? 0))}%`;
+    }
+
+    function setConnectionState(state, label) {
+      const status = document.querySelector("#connection-state");
+      status.dataset.state = state;
+      document.querySelector("#connection-label").textContent = label;
+    }
+
+    function formatBytes(value) {
+      if (!Number.isFinite(value)) return "--";
+      const units = ["B", "KB", "MB", "GB", "TB"];
+      let size = value;
+      let unit = 0;
+      while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
+      return `${size.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+    }
+
+    function latestChartRange(points) {
+      const max = points.length - 1;
+      const latestTimestamp = Date.parse(points[max]?.timestamp || "");
+      if (max < 0 || !Number.isFinite(latestTimestamp)) return { min: 0, max: Math.max(0, max) };
+      const cutoff = latestTimestamp - chartWindowMilliseconds;
+      const firstVisible = points.findIndex(point => Date.parse(point.timestamp || "") >= cutoff);
+      return { min: firstVisible < 0 ? 0 : firstVisible, max };
+    }
+
+    function drawChart(points) {
+      currentHistoryPoints = points;
+      const canvas = document.querySelector("#history-chart");
+      const emptyState = document.querySelector("#chart-empty");
+      if (!points.length) {
+        chartUserNavigated = false;
+        canvas.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        if (chart) {
+          chart.destroy();
+          chart = null;
+        }
+        return;
+      }
+      canvas.classList.remove("hidden");
+      emptyState.classList.add("hidden");
+      const labels = points.map(point => new Date(point.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      const data = {
+        labels,
+        datasets: [
+          { label: t("CPU"), data: points.map(point => point.cpu_percent), borderColor: "#a986e8", backgroundColor: "rgba(112,67,189,.13)", fill: true, tension: .28, pointRadius: 0, borderWidth: 2 },
+          { label: t("Memory"), data: points.map(point => point.memory_percent), borderColor: "#d2c4f0", backgroundColor: "transparent", tension: .28, pointRadius: 0, borderWidth: 2 }
+        ]
+      };
+      const latestRange = latestChartRange(points);
+      if (chart) {
+        chart.data = data;
+        chart.options.plugins.zoom.limits.x.max = points.length - 1;
+        if (!chartUserNavigated) {
+          chart.options.scales.x.min = latestRange.min;
+          chart.options.scales.x.max = latestRange.max;
+        }
+        chart.update("none");
+        return;
+      }
+      chart = new Chart(document.querySelector("#history-chart"), {
+        type: "line", data,
+        options: {
+          responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: "index" },
+          plugins: {
+            legend: { position: "bottom", labels: { color: "#d9cdef", usePointStyle: true, pointStyle: "circle", boxWidth: 6, boxHeight: 6, padding: 18, font: { size: 10 } } },
+            zoom: {
+              limits: { x: { min: 0, max: points.length - 1, minRange: 3 } },
+              pan: { enabled: true, mode: "x", modifierKey: "ctrl", onPan: () => { chartUserNavigated = true; } },
+              zoom: { wheel: { enabled: true, speed: 0.025 }, pinch: { enabled: true }, mode: "x", onZoom: () => { chartUserNavigated = true; } }
+            }
+          },
+          scales: {
+            x: { min: latestRange.min, max: latestRange.max, grid: { color: "rgba(201,182,244,.08)" }, ticks: { color: "#a494bd", maxTicksLimit: 7, maxRotation: 0 } },
+            y: { min: 0, max: 100, grid: { color: "rgba(201,182,244,.11)" }, ticks: { color: "#a494bd", callback: value => `${value}%` } }
+          }
+        }
+      });
+      if (!chartPanningBound) {
+        let dragState = null;
+        let pendingPanX = 0;
+        let panFrame = 0;
+        const canvas = chart.canvas;
+        canvas.addEventListener("pointerdown", event => {
+          if (event.pointerType !== "mouse" || event.button !== 0 || !chart) return;
+          const bounds = canvas.getBoundingClientRect();
+          const plot = chart.chartArea;
+          const pointX = event.clientX - bounds.left;
+          const pointY = event.clientY - bounds.top;
+          if (pointX < plot.left || pointX > plot.right || pointY < plot.top || pointY > plot.bottom) return;
+          dragState = { pointerId: event.pointerId, lastX: event.clientX };
+          canvas.setPointerCapture(event.pointerId);
+          event.preventDefault();
+        });
+        canvas.addEventListener("pointermove", event => {
+          if (!dragState || dragState.pointerId !== event.pointerId || !chart) return;
+          const deltaX = event.clientX - dragState.lastX;
+          if (Math.abs(deltaX) < 0.5) return;
+          dragState.lastX = event.clientX;
+          chartUserNavigated = true;
+          pendingPanX += deltaX;
+          if (!panFrame) {
+            panFrame = requestAnimationFrame(() => {
+              const delta = pendingPanX;
+              pendingPanX = 0;
+              panFrame = 0;
+              if (chart && delta) chart.pan({ x: delta, y: 0 });
+            });
+          }
+        });
+        const endPan = event => {
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          dragState = null;
+          if (panFrame) {
+            cancelAnimationFrame(panFrame);
+            panFrame = 0;
+          }
+          if (chart && pendingPanX) chart.pan({ x: pendingPanX, y: 0 });
+          pendingPanX = 0;
+          if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        };
+        canvas.addEventListener("pointerup", endPan);
+        canvas.addEventListener("pointercancel", endPan);
+        chartPanningBound = true;
+      }
+    }
+
+    function eventDetailsText(event) {
+      const details = event.details || {};
+      const keys = Object.keys(details);
+      if (!keys.length) return localiseCollectorText(event.message) || "—";
+      if (details.path) {
+        const status = details.status ? ` · ${collectorStatusLabel(details.status)}` : "";
+        return `${details.path}${status}`;
+      }
+      if (details.username) {
+        const user = `${t("User")}: ${details.username}`;
+        return details.event_id ? `${user} · ${t("Event ID")}: ${details.event_id}` : user;
+      }
+      if (details.port !== undefined) {
+        const address = details.address ? `${details.address}:${details.port}` : `${t("Port")} ${details.port}`;
+        const process = details.process ? ` · ${details.process}` : "";
+        const pid = Number.isFinite(details.pid) ? ` (pid ${details.pid})` : "";
+        return `${address}${process}${pid}`;
+      }
+      return keys.map(key => `${key}: ${details[key]}`).join(" · ");
+    }
+
+    // Only the newest scan of each type per host describes the current state; older
+    // cycles in the selected window would otherwise repeat every finding.
+    function latestScans(scans) {
+      const ordered = [...(scans || [])].sort((a, b) => Date.parse(b.timestamp || "") - Date.parse(a.timestamp || ""));
+      const byType = new Map();
+      for (const scan of ordered) {
+        const key = `${scan.host || ""}|${scan.scan_type || ""}`;
+        if (!byType.has(key)) byType.set(key, scan);
+      }
+      return [...byType.values()];
+    }
+
+    function findingRows(data) {
+      const rows = [];
+      const scans = latestScans(data.scan_results);
+      const portScanAvailable = scans
+        .filter(scan => scan.scan_type === "open_ports")
+        .some(scan => (scan.findings || []).some(item => item.status !== "unavailable"));
+      const fileScanAvailable = scans
+        .filter(scan => scan.scan_type === "file_integrity")
+        .some(scan => (scan.findings || []).some(item => item.status !== "unavailable"));
+      for (const event of data.security_events || []) {
+        const category = event.category || "other";
+        // The port scan already lists these; showing the raw event too duplicates every row.
+        if (category === "unknown_listening_port" && portScanAvailable) continue;
+        if (category === "modified_file" && fileScanAvailable) continue;
+        const group = category === "unknown_listening_port" ? "ports"
+          : category === "failed_login" ? "logins"
+          : category === "modified_file" ? "files"
+          : "other";
+        rows.push({
+          group,
+          type: categoryLabel(category),
+          finding: event.source_ip || localiseCollectorText(event.message) || category,
+          details: eventDetailsText(event),
+          severity: event.severity || "—",
+          timestamp: event.timestamp
+        });
+      }
+      const labels = { open_ports: t("Listening port"), package_audit: t("Package audit"), file_integrity: t("File integrity"), failed_logins: t("Failed login") };
+      const groups = { open_ports: "ports", package_audit: "packages", file_integrity: "files", failed_logins: "logins" };
+      for (const scan of scans) {
+        for (const item of scan.findings || []) {
+          if (scan.scan_type === "open_ports") {
+            if (item.status === "unavailable") {
+              rows.push({ group: "ports", type: labels[scan.scan_type], finding: t("Port enumeration unavailable"), details: item.reason || "—", severity: "medium", timestamp: scan.timestamp });
+            } else {
+              rows.push({ group: "ports", type: labels[scan.scan_type], finding: `${item.address || "—"}:${item.port ?? "—"}`, details: `${item.process || "—"}${item.known === false ? t(" · not allowlisted") : item.known === true ? t(" · allowlisted") : ""}`, severity: item.known === false ? "high" : "info", timestamp: scan.timestamp });
+            }
+          } else if (scan.scan_type === "package_audit") {
+            const details = item.reason || item.id || (item.installed || item.available || item.version
+              ? `${item.installed || item.version || "—"}${item.available ? ` → ${item.available}` : ""}${item.fix_versions?.length ? ` · ${t("fixes")}: ${item.fix_versions.join(", ")}` : ""}`
+              : (item.kb_articles?.length ? `KB ${item.kb_articles.join(", ")}` : "—"));
+            const kind = item.kind || "";
+            const severity = kind.includes("vulnerable") ? "high" : kind.includes("error") || kind.includes("unavailable") ? "medium" : kind.includes("outdated") || kind.includes("upgradable") ? "low" : "—";
+            const kindLabels = {
+              outdated_python_package: t("Outdated Python package"),
+              vulnerable_python_package: t("Vulnerable Python package"),
+              python_package_check_error: t("Package check failed"),
+              python_vulnerability_check_error: t("Vulnerability check failed"),
+              python_vulnerability_check_unavailable: t("Vulnerability check unavailable"),
+              upgradable_os_package: t("System update available"),
+              os_package_check_error: t("System update check failed")
+            };
+            const cachedNote = item.source === "windows_update_cached" ? ` · ${t("cached update list")}` : "";
+            rows.push({ group: "packages", type: labels[scan.scan_type], finding: item.name || kindLabels[kind] || item.kind || "—", details: `${details}${cachedNote}`, severity, timestamp: scan.timestamp });
+          } else if (scan.scan_type === "file_integrity") {
+            rows.push({ group: "files", type: labels[scan.scan_type], finding: item.path || "—", details: item.status === "unavailable" ? `${collectorStatusLabel(item.status)}: ${item.reason || "—"}` : collectorStatusLabel(item.status || "—"), severity: item.status === "modified" || item.status === "missing" ? "high" : item.status === "unavailable" ? "medium" : item.status === "baseline_created" ? "info" : "—", timestamp: scan.timestamp });
+          } else if (scan.scan_type === "failed_logins" && item.status === "unavailable") {
+            rows.push({ group: "logins", type: labels[scan.scan_type], finding: t("Authentication log unavailable"), details: item.reason || "—", severity: "medium", timestamp: scan.timestamp });
+          } else {
+            rows.push({ group: groups[scan.scan_type] || "other", type: labels[scan.scan_type] || scan.scan_type || "—", finding: item.source_ip || item.category || "—", details: item.username || item.message || "—", severity: item.severity || "—", timestamp: scan.timestamp });
+          }
+        }
+      }
+      return rows.sort((a, b) => Date.parse(b.timestamp || "") - Date.parse(a.timestamp || ""));
+    }
+
+    function renderFindings(data) {
+      const rows = findingRows(data);
+      const body = document.querySelector("#findings-body");
+      const groups = ["all", "ports", "logins", "packages", "files", "other"];
+      const counts = Object.fromEntries(groups.map(group => [group, group === "all" ? rows.length : rows.filter(row => row.group === group).length]));
+      for (const group of groups) {
+        const count = document.querySelector(`#finding-count-${group}`);
+        if (count) count.textContent = counts[group];
+      }
+      for (const button of document.querySelectorAll("[data-finding-filter]")) {
+        button.setAttribute("aria-pressed", String(button.dataset.findingFilter === activeFindingFilter));
+      }
+      const matchingRows = activeFindingFilter === "all" ? rows : rows.filter(row => row.group === activeFindingFilter);
+      const visibleRows = matchingRows.slice(0, 250);
+      document.querySelector("#finding-count").textContent = matchingRows.length > visibleRows.length
+        ? t("Showing {shown} of {total}", { shown: visibleRows.length, total: matchingRows.length })
+        : t("{count} records", { count: matchingRows.length });
+      body.replaceChildren();
+      if (!visibleRows.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "px-5 py-8 text-center text-[#718180]";
+        cell.textContent = activeFindingFilter === "all" ? t("No findings recorded in the latest results") : t("No findings in this category");
+        row.append(cell); body.append(row); return;
+      }
+      for (const item of visibleRows) {
+        const row = document.createElement("tr");
+        const time = item.timestamp && Number.isFinite(Date.parse(item.timestamp)) ? new Date(item.timestamp).toLocaleString() : "—";
+        const values = [item.type, item.finding, item.details, severityLabel(item.severity), time];
+        for (const value of values) {
+          const cell = document.createElement("td");
+          cell.className = "max-w-[360px] truncate px-5 py-3 text-[#b8c5c3]";
+          cell.textContent = String(value ?? "—");
+          // Cells are truncated with an ellipsis, so expose the full text on hover.
+          if (cell.textContent.length > 18) cell.title = cell.textContent;
+          row.append(cell);
+        }
+        const severity = row.children[3];
+        severity.className = `px-5 py-3 font-medium ${item.severity === "high" || item.severity === "critical" ? "text-[#ef7771]" : item.severity === "medium" ? "text-[#f0a36d]" : "text-[#91a1a1]"}`;
+        body.append(row);
+      }
+    }
+
+    // Collector strings are displayed in the chosen language; the stored payload is never modified.
+    const collectorStatusLabels = {
+      modified: "ถูกแก้ไข",
+      missing: "หายไป",
+      baseline_created: "สร้าง baseline แล้ว",
+      unavailable: "ไม่พร้อมใช้งาน",
+      ok: "ปกติ"
+    };
+    const collectorMessagePatterns = [
+      [/^Unapproved local listening port (\d+)$/, match => `พอร์ต ${match[1]} เปิดอยู่และไม่อยู่ในรายการอนุญาต`],
+      [/^Unapproved listening port (\S+) on (.+)$/, match => `พอร์ต ${match[1]} เปิดโดย ${match[2]} และไม่อยู่ในรายการอนุญาต`],
+      [/^Unapproved listening port (\S+)$/, match => `พอร์ต ${match[1]} ไม่อยู่ในรายการอนุญาต`],
+      [/^Critical file is missing or differs from its stored baseline$/, () => "ไฟล์สำคัญหายไปหรือไม่ตรงกับ baseline ที่เก็บไว้"],
+      [/^Failed authentication attempt in Windows Security log$/, () => "การยืนยันตัวตนล้มเหลว (บันทึกความปลอดภัยของ Windows)"],
+      [/^Failed authentication attempt in system log$/, () => "การยืนยันตัวตนล้มเหลว (บันทึกระบบ)"],
+      [/^Port enumeration unavailable$/, () => "ไม่สามารถตรวจพอร์ตได้"],
+      [/^Authentication log unavailable$/, () => "ไม่พบบันทึกการยืนยันตัวตน"]
+    ];
+
+    function collectorStatusLabel(status) {
+      return currentLanguage === "th" && collectorStatusLabels[status] ? collectorStatusLabels[status] : status;
+    }
+
+    function localiseCollectorText(value) {
+      const text = String(value ?? "");
+      if (currentLanguage !== "th" || !text) return text;
+      for (const [pattern, render] of collectorMessagePatterns) {
+        const match = text.match(pattern);
+        if (match) return render(match);
+      }
+      return text;
+    }
+
+    function localiseStoredMessage(alert) {
+      const message = String(alert.message || "");
+      if (currentLanguage !== "th") return message;
+      const threshold = message.match(/^([a-z_]+) reached ([\d.]+)$/);
+      if (threshold) return `${metricLabel(threshold[1])} ถึง ${threshold[2]}`;
+      const port = message.match(/^Unapproved listening port (\S+) on (.+)$/);
+      if (port) return `พอร์ต ${port[1]} ที่ไม่อยู่ในรายการอนุญาต เปิดโดย ${port[2]}`;
+      const failed = message.match(/^Failed logins from (\S+) reached (\d+)$/);
+      if (failed) return `เข้าสู่ระบบล้มเหลวจาก ${failed[1]} ถึง ${failed[2]} ครั้ง`;
+      const rule = message.match(/^Custom rule (.+) reached ([\d.]+)$/);
+      if (rule) return `กฎ ${rule[1]} ถึง ${rule[2]}`;
+      return localiseCollectorText(message);
+    }
+
+    function alertLabel(alert) {
+      if (alert.category === "unknown_listening_port") return t("Port {port} · {process} · not allowlisted", { port: alert.port ?? "—", process: alert.process || "—" });
+      if (alert.category === "security_event") return localiseCollectorText(alert.event?.message) || alert.event?.category || t("Security event");
+      if (alert.category === "system_threshold") return `${metricLabel(alert.metric) || t("Metric")}: ${alert.value ?? "—"}`;
+      if (alert.category === "custom_rule") return `${alert.name || t("Alert rule")}: ${alert.value ?? "—"}`;
+      if (alert.category === "failed_login_threshold") return alert.source_ip
+        ? t("Failed logins from {ip}: {count}", { ip: alert.source_ip, count: alert.count ?? "—" })
+        : t("Failed logins: {count}", { count: alert.count ?? "—" });
+      if (alert.category === "port_scan_unavailable") return t("Port scan unavailable");
+      return categoryLabel(alert.category) || t("Uncategorized alert");
+    }
+
+    let refreshInFlight = false;
+    let refreshQueued = false;
+    let liveRefreshTimer;
+    let lastFullRefresh = 0;
+    let dashboardStream = null;
+    let streamRetry = 0;
+    const MIN_FULL_REFRESH_MS = 10000;
+
+    function scheduleRefresh(delay = 1500) {
+      clearTimeout(liveRefreshTimer);
+      const earliest = lastFullRefresh + MIN_FULL_REFRESH_MS;
+      const wait = Math.max(delay, earliest - Date.now());
+      liveRefreshTimer = setTimeout(refreshDashboard, wait);
+    }
+
+    function applyLiveMetrics(metrics) {
+      if (!metrics) return;
+      if (selectedHost && metrics.host && metrics.host !== selectedHost) return;
+      setMetric("cpu-value", "cpu-bar", metrics.cpu_percent);
+      setMetric("memory-value", "memory-bar", metrics.memory_percent);
+      setMetric("disk-value", "disk-bar", metrics.disk_percent);
+      const sampleTime = Date.parse(metrics.timestamp || "");
+      if (!Number.isFinite(sampleTime)) return;
+      const hostLabel = metrics.host ? ` · ${metrics.host}` : "";
+      document.querySelector("#last-updated").textContent = t("Updated {time}{host}", { time: new Date(sampleTime).toLocaleTimeString(), host: hostLabel });
+      setConnectionState("live", t("Live"));
+    }
+
+    async function refreshDashboard() {
+      if (refreshInFlight) { refreshQueued = true; return; }
+      refreshInFlight = true;
+      try {
+        await refreshDashboardNow();
+      } finally {
+        refreshInFlight = false;
+        if (refreshQueued) { refreshQueued = false; scheduleRefresh(0); }
+      }
+    }
+
+    function stopDashboardStream() {
+      if (dashboardStream) { dashboardStream.abort(); dashboardStream = null; }
+    }
+
+    async function startDashboardStream() {
+      if (dashboardStream || !tokenStore.getItem(tokenKey)) return;
+      const controller = new AbortController();
+      dashboardStream = controller;
+      let failed = false;
+      try {
+        const response = await fetch(`${apiAddress()}/api/v1/dashboard/stream`, {
+          headers: { Authorization: `Bearer ${tokenStore.getItem(tokenKey)}` },
+          signal: controller.signal
+        });
+        if (response.status === 401) { tokenStore.removeItem(tokenKey); showLogin(); return; }
+        if (!response.ok || !response.body) throw new Error(`Stream ${response.status}`);
+        streamRetry = 0;
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let index;
+          while ((index = buffer.indexOf("\n\n")) >= 0) {
+            const chunk = buffer.slice(0, index);
+            buffer = buffer.slice(index + 2);
+            const type = (chunk.match(/^event: (.+)$/m) || [])[1];
+            if (!type || type === "ready") continue;
+            if (type === "metrics") {
+              const raw = (chunk.match(/^data: (.+)$/m) || [])[1];
+              try { applyLiveMetrics(JSON.parse(raw || "{}")); } catch (error) { /* ignore malformed event */ }
+            } else {
+              scheduleRefresh();
+            }
+          }
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        failed = true;
+      } finally {
+        if (dashboardStream === controller) dashboardStream = null;
+      }
+      if (!failed || !tokenStore.getItem(tokenKey)) return;
+      streamRetry = Math.min(streamRetry + 1, 5);
+      if (streamRetry >= 3) scheduleRefresh(15000);
+      setTimeout(startDashboardStream, streamRetry * 2000);
+    }
+
+    async function refreshDashboardNow() {
+      lastFullRefresh = Date.now();
+      try {
+        const hostQuery = selectedHost ? `&host=${encodeURIComponent(selectedHost)}` : "";
+        const [latest, history] = await Promise.all([
+          apiRequest(`/dashboard/latest?hours=${activeRange.hours}${hostQuery}`),
+          apiRequest(`/dashboard/history?hours=${activeRange.hours}&limit=5000${hostQuery}`)
+        ]);
+        syncHostSelect(latest);
+        const metrics = latest.metrics || {};
+        setMetric("cpu-value", "cpu-bar", metrics.cpu_percent);
+        setMetric("memory-value", "memory-bar", metrics.memory_percent);
+        setMetric("disk-value", "disk-bar", metrics.disk_percent);
+        document.querySelector("#temperature-value").textContent = Number.isFinite(metrics.system_temp_celsius) ? `${metrics.system_temp_celsius.toFixed(2)} °C` : metrics.timestamp ? t("Not available") : "--";
+        document.querySelector("#alerts-value").textContent = Number.isFinite(latest.active_alerts) ? latest.active_alerts : "—";
+        document.querySelector("#network-sent").textContent = formatBytes(metrics.network_bytes_sent);
+        document.querySelector("#network-received").textContent = formatBytes(metrics.network_bytes_received);
+        const sampleTime = Date.parse(metrics.timestamp || "");
+        if (Number.isFinite(sampleTime)) {
+          const sampleAge = Date.now() - sampleTime;
+          const hostLabel = metrics.host ? ` · ${metrics.host}` : "";
+          document.querySelector("#last-updated").textContent = t("Updated {time}{host}", { time: new Date(sampleTime).toLocaleTimeString(), host: hostLabel });
+          const fresh = sampleAge >= -5000 && sampleAge <= 45000;
+          setConnectionState(fresh ? "live" : "stale", fresh ? t("Live") : t("Stale data"));
+        } else {
+          document.querySelector("#last-updated").textContent = t("No metric sample received");
+          setConnectionState("stale", t("No metrics"));
+        }
+        const alertList = document.querySelector("#alert-list");
+        alertList.replaceChildren();
+        const alerts = latest.alert_details || [];
+        if (!alerts.length) {
+          const item = document.createElement("li"); item.className = "text-[#718180]"; item.textContent = t("No active alerts"); alertList.append(item);
+        } else {
+          for (const alert of alerts) {
+            const item = document.createElement("li");
+            item.className = "border-l-2 border-[#ef7771] pl-3 text-[#d5dfdd]";
+            item.textContent = alertLabel(alert);
+            alertList.append(item);
+          }
+        }
+        drawChart(history);
+        currentDashboardData = latest;
+        renderFindings(latest);
+        loadAlertHistory().catch(() => {});
+      } catch (error) {
+        setConnectionState("unavailable", t("API unavailable"));
+        if (error.message.includes("Failed to fetch")) {
+          document.querySelector("#last-updated").textContent = t("Check API address, CORS, and MongoDB status");
+        } else if (tokenStore.getItem(tokenKey)) {
+          document.querySelector("#last-updated").textContent = error.message;
+        }
+      } finally {
+        if (tokenStore.getItem(tokenKey)) startDashboardStream();
+      }
+    }
+
+    document.querySelector("#login-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector("button[type=submit]");
+      const error = document.querySelector("#login-error");
+      button.disabled = true;
+      button.textContent = t("Signing in...");
+      error.classList.add("hidden");
+      tokenStore.setItem(apiKey, apiAddress());
+      try {
+        const response = await fetch(`${apiAddress()}/api/v1/auth/login`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: document.querySelector("#username").value, password: document.querySelector("#password").value })
+        });
+        if (!response.ok) {
+          if (response.status === 401) throw new Error(t("Username or password is incorrect"));
+          if (response.status === 429) {
+            const retryAfter = Number(response.headers.get("Retry-After")) || 0;
+            let detail = "";
+            try { detail = (await response.json()).detail || ""; } catch { /* no body */ }
+            const locked = /locked/i.test(detail);
+            throw new Error(retryAfter
+              ? t(locked ? "Account temporarily locked. Try again in {seconds}s." : "Too many attempts. Please try again in {seconds}s.", { seconds: retryAfter })
+              : t("Too many attempts. Please try again later."));
+          }
+          throw new Error(t("Sign-in failed ({status})", { status: response.status }));
+        }
+        const result = await response.json();
+        tokenStore.setItem(tokenKey, result.access_token);
+        document.querySelector("#password").value = "";
+        showDashboard();
+        loadCurrentAccount().catch(() => {});
+        refreshDashboard();
+      } catch (loginError) {
+        error.textContent = loginError.message;
+        error.classList.remove("hidden");
+      } finally {
+        button.disabled = false;
+        button.textContent = t("Continue");
+      }
+    });
+
+    document.querySelector("#refresh-button").addEventListener("click", () => { clearTimeout(refreshTimer); refreshDashboard(); });
+    document.querySelector("#logout-button").addEventListener("click", () => { stopDashboardStream(); tokenStore.removeItem(tokenKey); showLogin(); });
+    document.querySelector("#chart-reset-zoom").addEventListener("click", () => {
+      if (!chart) return;
+      chartUserNavigated = false;
+      chart.resetZoom();
+      const range = latestChartRange(currentHistoryPoints);
+      chart.options.scales.x.min = range.min;
+      chart.options.scales.x.max = range.max;
+      chart.update("none");
+    });
+    const accountDialog = document.querySelector("#account-dialog");
+    const accountForm = document.querySelector("#account-form");
+    const accountMessage = document.querySelector("#account-form-message");
+    const accountSubmit = document.querySelector("#save-account-changes");
+
+    function showAccountMessage(message, type) {
+      accountMessage.textContent = message;
+      accountMessage.classList.toggle("hidden", !message);
+      accountMessage.classList.toggle("text-[#ef7771]", type === "error");
+      accountMessage.classList.toggle("text-[#c1e879]", type === "success");
+    }
+
+    document.querySelector("#account-identity").addEventListener("click", () => {
+      accountForm.reset();
+      showAccountMessage("", "");
+      accountDialog.showModal();
+    });
+    document.querySelector("#close-account-dialog").addEventListener("click", () => {
+      accountForm.reset();
+      accountDialog.close();
+    });
+    document.querySelector("#cancel-account-changes").addEventListener("click", () => {
+      accountForm.reset();
+      accountDialog.close();
+    });
+    accountForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const currentPassword = document.querySelector("#current-password").value;
+      const newUsername = document.querySelector("#new-username").value.trim();
+      const newPassword = document.querySelector("#new-password").value;
+      const confirmPassword = document.querySelector("#confirm-new-password").value;
+
+      if (!newUsername && !newPassword) {
+        showAccountMessage(t("Enter a new username or password."), "error");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showAccountMessage(t("New passwords do not match."), "error");
+        return;
+      }
+
+      const payload = { current_password: currentPassword };
+      if (newUsername) payload.new_username = newUsername;
+      if (newPassword) payload.new_password = newPassword;
+
+      accountSubmit.disabled = true;
+      accountSubmit.textContent = t("Saving...");
+      showAccountMessage("", "");
+      try {
+        const account = await apiRequest("/auth/me", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        document.querySelector("#account-name").textContent = account.username;
+        accountForm.reset();
+        showAccountMessage(t("Account updated. This session remains active; use the new credentials next time."), "success");
+      } catch (error) {
+        showAccountMessage(error.message || t("Could not update account."), "error");
+      } finally {
+        accountSubmit.disabled = false;
+        accountSubmit.textContent = t("Save changes");
+      }
+    });
+
+    function applyRange(range) {
+      activeRange = range;
+      chartWindowMilliseconds = range.windowMinutes * 60 * 1000;
+      const label = range.windowMinutes >= 1440
+        ? t("Last {count} days", { count: Math.round(range.windowMinutes / 1440) })
+        : range.windowMinutes >= 60
+          ? t("Last {count} hours", { count: Math.round(range.windowMinutes / 60) })
+          : t("Last {count} minutes", { count: range.windowMinutes });
+      document.querySelector("#history-range-label").textContent = `${label} · ${t("drag to browse older samples")}`;
+      chartUserNavigated = false;
+    }
+
+    document.querySelector("#range-filters").addEventListener("click", event => {
+      const button = event.target.closest("[data-hours]");
+      if (!button) return;
+      for (const rangeButton of document.querySelectorAll("[data-hours]")) {
+        rangeButton.setAttribute("aria-pressed", String(rangeButton === button));
+      }
+      applyRange({
+        hours: Number(button.dataset.hours),
+        windowMinutes: Number(button.dataset.windowMinutes)
+      });
+      clearTimeout(refreshTimer);
+      refreshDashboard();
+    });
+
+    function hostOptionLabel(entry) {
+      const seen = Date.parse(entry.last_seen || "");
+      if (!Number.isFinite(seen)) return entry.host;
+      const seconds = Math.max(0, Math.round((Date.now() - seen) / 1000));
+      const age = seconds < 60
+        ? t("{n}s ago", { n: seconds })
+        : seconds < 3600
+          ? t("{n}m ago", { n: Math.round(seconds / 60) })
+          : t("{n}h ago", { n: Math.round(seconds / 3600) });
+      return `${entry.host} · ${age}`;
+    }
+
+    function syncHostSelect(latest) {
+      const select = document.querySelector("#host-select");
+      const hosts = Array.isArray(latest.hosts) ? latest.hosts : [];
+      if (selectedHost && !hosts.some(entry => entry.host === selectedHost)) selectedHost = "";
+      const signature = hosts
+        .map(entry => `${entry.host}:${Math.round((Date.parse(entry.last_seen || "") || 0) / 30000)}`)
+        .join("|");
+      if (signature === hostOptionsSignature && select.dataset.built === "true") return;
+      hostOptionsSignature = signature;
+      select.replaceChildren();
+      const options = [{ host: "", label: t("All hosts") }].concat(
+        hosts.map(entry => ({ host: entry.host, label: hostOptionLabel(entry) }))
+      );
+      for (const entry of options) {
+        const option = document.createElement("option");
+        option.value = entry.host;
+        option.textContent = entry.label;
+        option.selected = entry.host === selectedHost;
+        select.append(option);
+      }
+      select.dataset.built = "true";
+    }
+
+    document.querySelector("#host-select").addEventListener("change", event => {
+      selectedHost = event.target.value;
+      chartUserNavigated = false;
+      clearTimeout(refreshTimer);
+      refreshDashboard();
+    });
+
+    const settingsDialog = document.querySelector("#settings-dialog");
+
+    function showSettingsMessage(selector, message, type) {
+      const element = document.querySelector(selector);
+      element.textContent = message;
+      element.classList.toggle("hidden", !message);
+      element.classList.toggle("text-[#ef7771]", type === "error");
+      element.classList.toggle("text-[#c1e879]", type === "success");
+    }
+
+    function settingsRowButton(label, action) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "whitespace-nowrap border border-[#3b4b4c] px-2 py-1 text-[11px] text-[#d5dfdd] hover:border-[#66d8c6]";
+      button.textContent = label;
+      button.addEventListener("click", action);
+      return button;
+    }
+
+    function emptySettingsRow(list, message) {
+      const item = document.createElement("li");
+      item.className = "text-xs text-[#718180]";
+      item.textContent = message;
+      list.append(item);
+    }
+
+    async function loadHostScopeOptions() {
+      let hosts = [];
+      try {
+        hosts = (await apiRequest("/dashboard/hosts?hours=720")) || [];
+      } catch (error) {
+        hosts = [];
+      }
+      const names = hosts.map(entry => entry.host).filter(Boolean);
+      for (const [selector, allLabel] of [["#threshold-scope", t("All hosts (global)")], ["#rule-host", t("All hosts")]]) {
+        const select = document.querySelector(selector);
+        const current = select.value;
+        select.replaceChildren();
+        const all = document.createElement("option");
+        all.value = "";
+        all.textContent = allLabel;
+        select.append(all);
+        for (const name of names) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          select.append(option);
+        }
+        select.value = current === "" || names.includes(current) ? current : "";
+      }
+      return names;
+    }
+
+    async function loadThresholds() {
+      const host = document.querySelector("#threshold-scope").value;
+      const data = await apiRequest(`/thresholds${host ? `?host=${encodeURIComponent(host)}` : ""}`);
+      document.querySelector("#threshold-cpu").value = data.cpu_percent;
+      document.querySelector("#threshold-memory").value = data.memory_percent;
+      document.querySelector("#threshold-disk").value = data.disk_percent;
+      document.querySelector("#threshold-logins").value = data.failed_login_count;
+      document.querySelector("#threshold-window").value = data.failed_login_window_minutes;
+      document.querySelector("#threshold-delete-override").classList.toggle("hidden", !data.overridden);
+      document.querySelector("#thresholds-scope-note").textContent = data.overridden
+        ? t("{host} uses its own values; other hosts keep the global defaults.", { host: data.scope })
+        : host
+          ? t("{host} falls back to the global defaults. Saving stores host-specific values.", { host })
+          : t("Applies to every host without its own override.");
+    }
+
+    async function loadRetention() {
+      const data = await apiRequest("/retention");
+      document.querySelector("#retention-metrics").value = data.metrics;
+      document.querySelector("#retention-events").value = data.security_events;
+      document.querySelector("#retention-scans").value = data.scan_results;
+    }
+
+    document.querySelector("#retention-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector("button[type=submit]");
+      button.disabled = true;
+      showSettingsMessage("#retention-message", "", "");
+      try {
+        await apiRequest("/retention", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            metrics: Number(document.querySelector("#retention-metrics").value),
+            security_events: Number(document.querySelector("#retention-events").value),
+            scan_results: Number(document.querySelector("#retention-scans").value)
+          })
+        });
+        await loadRetention();
+        showSettingsMessage("#retention-message", t("Retention saved."), "success");
+      } catch (error) {
+        showSettingsMessage("#retention-message", error.message || t("Could not save retention."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    async function loadAlertRules() {
+      const list = document.querySelector("#rules-list");
+      const rules = await apiRequest("/alert-rules");
+      list.replaceChildren();
+      if (!rules.length) {
+        emptySettingsRow(list, t("No custom rules yet."));
+        return;
+      }
+      for (const rule of rules) {
+        const item = document.createElement("li");
+        item.className = "flex flex-wrap items-center gap-2 border border-[#293637] px-3 py-2 text-xs";
+        const text = document.createElement("span");
+        text.className = "min-w-0 flex-1";
+        text.textContent = `${rule.name} · ${metricLabel(rule.metric)} ${rule.operator} ${rule.threshold} · ${rule.host || t("all hosts")}${rule.enabled ? "" : " · " + t("disabled")}`;
+        const toggle = settingsRowButton(rule.enabled ? t("Disable") : t("Enable"), async () => {
+          toggle.disabled = true;
+          try {
+            await apiRequest(`/alert-rules/${rule.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: rule.name, host: rule.host || "", metric: rule.metric, operator: rule.operator, threshold: rule.threshold, enabled: !rule.enabled })
+            });
+            await loadAlertRules();
+            showSettingsMessage("#rules-message", t(rule.enabled ? "Rule disabled." : "Rule enabled."), "success");
+            clearTimeout(refreshTimer);
+            refreshDashboard();
+          } catch (error) {
+            showSettingsMessage("#rules-message", error.message || t("Could not update the rule."), "error");
+            toggle.disabled = false;
+          }
+        });
+        const remove = settingsRowButton(t("Delete"), async () => {
+          remove.disabled = true;
+          try {
+            await apiRequest(`/alert-rules/${rule.id}`, { method: "DELETE" });
+            await loadAlertRules();
+            showSettingsMessage("#rules-message", t("Rule deleted."), "success");
+            clearTimeout(refreshTimer);
+            refreshDashboard();
+          } catch (error) {
+            showSettingsMessage("#rules-message", error.message || t("Could not delete the rule."), "error");
+            remove.disabled = false;
+          }
+        });
+        item.append(text, toggle, remove);
+        list.append(item);
+      }
+    }
+
+    async function loadWhitelist() {
+      const list = document.querySelector("#whitelist-list");
+      const entries = await apiRequest("/whitelist");
+      list.replaceChildren();
+      if (!entries.length) {
+        emptySettingsRow(list, t("No allowlisted addresses yet."));
+        return;
+      }
+      for (const entry of entries) {
+        const item = document.createElement("li");
+        item.className = "flex flex-wrap items-center gap-2 border border-[#293637] px-3 py-2 text-xs";
+        const text = document.createElement("span");
+        text.className = "min-w-0 flex-1";
+        text.textContent = entry.label ? `${entry.ip_address} · ${entry.label}` : entry.ip_address;
+        const remove = settingsRowButton(t("Delete"), async () => {
+          remove.disabled = true;
+          try {
+            await apiRequest(`/whitelist/${entry.id}`, { method: "DELETE" });
+            await loadWhitelist();
+            showSettingsMessage("#whitelist-message", t("Address removed."), "success");
+            clearTimeout(refreshTimer);
+            refreshDashboard();
+          } catch (error) {
+            showSettingsMessage("#whitelist-message", error.message || t("Could not remove the address."), "error");
+            remove.disabled = false;
+          }
+        });
+        item.append(text, remove);
+        list.append(item);
+      }
+    }
+
+    function refreshAfterSettingsChange() {
+      clearTimeout(refreshTimer);
+      refreshDashboard();
+    }
+
+    document.querySelector("#threshold-scope").addEventListener("change", async () => {
+      showSettingsMessage("#thresholds-message", "", "");
+      try {
+        await loadThresholds();
+      } catch (error) {
+        showSettingsMessage("#thresholds-message", error.message || t("Could not load thresholds."), "error");
+      }
+    });
+
+    document.querySelector("#threshold-delete-override").addEventListener("click", async event => {
+      const host = document.querySelector("#threshold-scope").value;
+      if (!host) return;
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await apiRequest(`/thresholds?host=${encodeURIComponent(host)}`, { method: "DELETE" });
+        await loadThresholds();
+        showSettingsMessage("#thresholds-message", t("Removed the override for {host}.", { host }), "success");
+        refreshAfterSettingsChange();
+      } catch (error) {
+        showSettingsMessage("#thresholds-message", error.message || t("Could not remove the override."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#thresholds-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = event.currentTarget.querySelector("button[type=submit]");
+      button.disabled = true;
+      showSettingsMessage("#thresholds-message", "", "");
+      const host = document.querySelector("#threshold-scope").value;
+      try {
+        await apiRequest(`/thresholds${host ? `?host=${encodeURIComponent(host)}` : ""}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cpu_percent: Number(document.querySelector("#threshold-cpu").value),
+            memory_percent: Number(document.querySelector("#threshold-memory").value),
+            disk_percent: Number(document.querySelector("#threshold-disk").value),
+            failed_login_count: Number(document.querySelector("#threshold-logins").value),
+            failed_login_window_minutes: Number(document.querySelector("#threshold-window").value)
+          })
+        });
+        await loadThresholds();
+        showSettingsMessage("#thresholds-message", host ? t("Thresholds saved for {host}.", { host }) : t("Global thresholds saved."), "success");
+        refreshAfterSettingsChange();
+      } catch (error) {
+        showSettingsMessage("#thresholds-message", error.message || t("Could not save thresholds."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#rules-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector("button[type=submit]");
+      button.disabled = true;
+      showSettingsMessage("#rules-message", "", "");
+      try {
+        await apiRequest("/alert-rules", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: document.querySelector("#rule-name").value.trim(),
+            host: document.querySelector("#rule-host").value,
+            metric: document.querySelector("#rule-metric").value,
+            operator: document.querySelector("#rule-operator").value,
+            threshold: Number(document.querySelector("#rule-threshold").value),
+            enabled: true
+          })
+        });
+        form.reset();
+        await loadAlertRules();
+        showSettingsMessage("#rules-message", t("Rule created."), "success");
+        refreshAfterSettingsChange();
+      } catch (error) {
+        showSettingsMessage("#rules-message", error.message || t("Could not create the rule."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#whitelist-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector("button[type=submit]");
+      button.disabled = true;
+      showSettingsMessage("#whitelist-message", "", "");
+      try {
+        await apiRequest("/whitelist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ip_address: document.querySelector("#whitelist-ip").value.trim(),
+            label: document.querySelector("#whitelist-label").value.trim()
+          })
+        });
+        form.reset();
+        await loadWhitelist();
+        showSettingsMessage("#whitelist-message", t("Address added."), "success");
+        refreshAfterSettingsChange();
+      } catch (error) {
+        showSettingsMessage("#whitelist-message", error.message || t("Could not add the address."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    async function loadNotificationChannels() {
+      const list = document.querySelector("#channels-list");
+      const channels = await apiRequest("/notification-channels");
+      list.replaceChildren();
+      if (!channels.length) {
+        emptySettingsRow(list, t("No notification channels yet."));
+        return;
+      }
+      for (const channel of channels) {
+        const item = document.createElement("li");
+        item.className = "flex flex-wrap items-center gap-2 border border-[#293637] px-3 py-2 text-xs";
+        const text = document.createElement("span");
+        text.className = "min-w-0 flex-1";
+        text.textContent = `${channel.name} · ${channelKindLabel(channel.kind)} · ${channel.url_hint}${channel.enabled ? "" : " · " + t("disabled")}`;
+        const test = settingsRowButton(t("Test"), async () => {
+          test.disabled = true;
+          showSettingsMessage("#channels-message", "", "");
+          try {
+            await apiRequest(`/notification-channels/${channel.id}/test`, { method: "POST" });
+            showSettingsMessage("#channels-message", t("Test notification sent to {name}.", { name: channel.name }), "success");
+          } catch (error) {
+            showSettingsMessage("#channels-message", error.message || t("Test delivery failed."), "error");
+          } finally {
+            test.disabled = false;
+          }
+        });
+        const toggle = settingsRowButton(channel.enabled ? t("Disable") : t("Enable"), async () => {
+          toggle.disabled = true;
+          showSettingsMessage("#channels-message", "", "");
+          try {
+            await apiRequest(`/notification-channels/${channel.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enabled: !channel.enabled })
+            });
+            await loadNotificationChannels();
+            showSettingsMessage("#channels-message", t(channel.enabled ? "Channel disabled." : "Channel enabled."), "success");
+          } catch (error) {
+            showSettingsMessage("#channels-message", error.message || t("Could not update the channel."), "error");
+            toggle.disabled = false;
+          }
+        });
+        const remove = settingsRowButton(t("Delete"), async () => {
+          remove.disabled = true;
+          showSettingsMessage("#channels-message", "", "");
+          try {
+            await apiRequest(`/notification-channels/${channel.id}`, { method: "DELETE" });
+            await loadNotificationChannels();
+            showSettingsMessage("#channels-message", t("Channel deleted."), "success");
+          } catch (error) {
+            showSettingsMessage("#channels-message", error.message || t("Could not delete the channel."), "error");
+            remove.disabled = false;
+          }
+        });
+        item.append(text, test, toggle, remove);
+        list.append(item);
+      }
+    }
+
+    const channelKindSelect = document.querySelector("#channel-kind");
+    const channelUrlInput = document.querySelector("#channel-url");
+    const syncChannelUrlField = kind => {
+      const isTelegram = kind === "telegram";
+      channelUrlInput.type = isTelegram ? "text" : "url";
+      channelUrlInput.placeholder = isTelegram ? "123456789:AAF… (bot token)" : "https://hooks.slack.com/services/...";
+    };
+    syncChannelUrlField(channelKindSelect.value);
+    channelKindSelect.addEventListener("change", event => {
+      document.querySelector("#channel-chat-field").classList.toggle("hidden", event.target.value !== "telegram");
+      syncChannelUrlField(event.target.value);
+    });
+
+    document.querySelector("#channels-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector("button[type=submit]");
+      const kind = document.querySelector("#channel-kind").value;
+      button.disabled = true;
+      showSettingsMessage("#channels-message", "", "");
+      try {
+        const payload = {
+          name: document.querySelector("#channel-name").value.trim(),
+          kind,
+          webhook_url: document.querySelector("#channel-url").value.trim(),
+          enabled: true
+        };
+        if (kind === "telegram") payload.chat_id = document.querySelector("#channel-chat-id").value.trim();
+        await apiRequest("/notification-channels", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        form.reset();
+        document.querySelector("#channel-chat-field").classList.add("hidden");
+        await loadNotificationChannels();
+        showSettingsMessage("#channels-message", t("Channel added."), "success");
+      } catch (error) {
+        showSettingsMessage("#channels-message", error.message || t("Could not add the channel."), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#settings-button").addEventListener("click", async () => {
+      for (const selector of ["#thresholds-message", "#rules-message", "#whitelist-message", "#channels-message"]) {
+        showSettingsMessage(selector, "", "");
+      }
+      settingsDialog.showModal();
+      try {
+        await loadHostScopeOptions();
+        await Promise.all([loadThresholds(), loadRetention(), loadAlertRules(), loadWhitelist(), loadNotificationChannels()]);
+      } catch (error) {
+        showSettingsMessage("#rules-message", error.message || t("Could not load settings."), "error");
+      }
+    });
+
+    document.querySelector("#close-settings-dialog").addEventListener("click", () => settingsDialog.close());
+
+    document.querySelector("#finding-filters").addEventListener("click", event => {
+      const button = event.target.closest("[data-finding-filter]");
+      if (!button) return;
+      activeFindingFilter = button.dataset.findingFilter;
+      for (const filterButton of document.querySelectorAll("[data-finding-filter]")) {
+        filterButton.setAttribute("aria-pressed", String(filterButton === button));
+      }
+      if (currentDashboardData) renderFindings(currentDashboardData);
+    });
+
+    let currentAlertHistory = [];
+    let activeAlertFilter = "all";
+
+    function alertHistoryCell(text, className) {
+      const cell = document.createElement("td");
+      cell.className = className || "max-w-[320px] truncate px-5 py-3 text-[#b8c5c3]";
+      cell.textContent = String(text ?? "—");
+      // Truncated text stays reachable through the native tooltip.
+      if (cell.textContent.length > 18) cell.title = cell.textContent;
+      return cell;
+    }
+
+    function alertSeverityClass(severity) {
+      if (severity === "critical") return "text-[#ef7771]";
+      if (severity === "warning") return "text-[#f0a36d]";
+      return "text-[#91a1a1]";
+    }
+
+    function alertStatusBadge(status) {
+      const badge = document.createElement("span");
+      const tone = status === "new"
+        ? "border-[#ef7771] text-[#ef7771]"
+        : status === "acknowledged"
+          ? "border-[#f0a36d] text-[#f0a36d]"
+          : "border-[#344344] text-[#91a1a1]";
+      badge.className = `inline-block border px-2 py-0.5 text-[10px] uppercase tracking-wider ${tone}`;
+      badge.textContent = statusLabel(status);
+      return badge;
+    }
+
+    function formatAlertTime(value) {
+      const parsed = Date.parse(value || "");
+      return Number.isFinite(parsed) ? new Date(parsed).toLocaleString() : "—";
+    }
+
+    async function setAlertStatus(alertId, status) {
+      try {
+        await apiRequest(`/alerts/${alertId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        });
+        await loadAlertHistory();
+      } catch (error) {
+        document.querySelector("#alert-history-count").textContent = error.message || t("Could not update the alert");
+      }
+    }
+
+    async function loadAlertHistory() {
+      const hostQuery = selectedHost ? `&host=${encodeURIComponent(selectedHost)}` : "";
+      currentAlertHistory = (await apiRequest(`/alerts?limit=200${hostQuery}`)) || [];
+      renderAlertHistory();
+    }
+
+    function renderAlertHistory() {
+      const body = document.querySelector("#alert-history-body");
+      const counts = { all: currentAlertHistory.length, new: 0, acknowledged: 0, resolved: 0 };
+      for (const alert of currentAlertHistory) {
+        if (Object.prototype.hasOwnProperty.call(counts, alert.status)) counts[alert.status] += 1;
+      }
+      for (const key of ["all", "new", "acknowledged", "resolved"]) {
+        const node = document.querySelector(`#alert-count-${key}`);
+        if (node) node.textContent = counts[key];
+      }
+      const rows = activeAlertFilter === "all"
+        ? currentAlertHistory
+        : currentAlertHistory.filter(alert => alert.status === activeAlertFilter);
+      document.querySelector("#alert-history-count").textContent = rows.length
+        ? t("{count} alerts", { count: rows.length })
+        : t("No alerts recorded");
+      body.replaceChildren();
+      if (!rows.length) {
+        const row = document.createElement("tr");
+        const cell = alertHistoryCell(
+          activeAlertFilter === "all" ? t("No alerts stored yet") : t("No {status} alerts", { status: statusLabel(activeAlertFilter) }),
+          "px-5 py-8 text-center text-[#718180]"
+        );
+        cell.colSpan = 8;
+        row.append(cell);
+        body.append(row);
+        return;
+      }
+      for (const alert of rows) {
+        const row = document.createElement("tr");
+        const statusCell = document.createElement("td");
+        statusCell.className = "px-5 py-3";
+        statusCell.append(alertStatusBadge(alert.status));
+        row.append(
+          statusCell,
+          alertHistoryCell(alert.host || "—", "px-5 py-3 text-[#b8c5c3]"),
+          alertHistoryCell(localiseStoredMessage(alert)),
+          alertHistoryCell(categoryLabel(alert.category), "px-5 py-3 text-[#b8c5c3]"),
+          alertHistoryCell(severityLabel(alert.severity), `px-5 py-3 font-medium ${alertSeverityClass(alert.severity)}`),
+          alertHistoryCell(formatAlertTime(alert.first_seen), "whitespace-nowrap px-5 py-3 text-[#b8c5c3]"),
+          alertHistoryCell(formatAlertTime(alert.last_seen), "whitespace-nowrap px-5 py-3 text-[#b8c5c3]")
+        );
+        const actions = document.createElement("td");
+        actions.className = "px-5 py-3";
+        const group = document.createElement("div");
+        group.className = "flex flex-nowrap gap-1";
+        if (alert.status === "new") group.append(settingsRowButton(t("Acknowledge"), () => setAlertStatus(alert.id, "acknowledged")));
+        if (alert.status !== "resolved") group.append(settingsRowButton(t("Resolve"), () => setAlertStatus(alert.id, "resolved")));
+        else group.append(settingsRowButton(t("Reopen"), () => setAlertStatus(alert.id, "new")));
+        actions.append(group);
+        row.append(actions);
+        body.append(row);
+      }
+    }
+
+    document.querySelector("#alert-status-filters").addEventListener("click", event => {
+      const button = event.target.closest("[data-alert-filter]");
+      if (!button) return;
+      activeAlertFilter = button.dataset.alertFilter;
+      for (const filterButton of document.querySelectorAll("[data-alert-filter]")) {
+        filterButton.setAttribute("aria-pressed", String(filterButton === button));
+      }
+      renderAlertHistory();
+    });
+
+    for (const button of document.querySelectorAll("[data-language]")) {
+      button.addEventListener("click", () => setLanguage(button.dataset.language));
+    }
+
+    setLanguage(currentLanguage, { persist: false, refresh: false });
+    applyRange(activeRange);
+
+    if (tokenStore.getItem(tokenKey)) {
+      showDashboard();
+      loadCurrentAccount().catch(() => {});
+      refreshDashboard();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  mongo:
+    image: ${MONGO_IMAGE:-mongo:7}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # mongo 4.4 ships the legacy shell, 7.x ships mongosh; accept either.
+      test: ["CMD-SHELL", "mongo --quiet --eval \"db.adminCommand('ping').ok\" 2>/dev/null || mongosh --quiet --eval \"db.adminCommand('ping').ok\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  mongo-data:

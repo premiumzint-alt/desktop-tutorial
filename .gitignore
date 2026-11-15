@@ -1,0 +1,14 @@
+﻿backend/.env
+backend/.venv/
+collector/.venv/
+backend/logs/
+frontend/logs/
+logs/
+backend/monitor.db
+__pycache__/
+*.py[cod]
+collector/state/
+data/
+backups/
+.vscode/
+user-pass.txt

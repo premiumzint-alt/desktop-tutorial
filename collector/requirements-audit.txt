@@ -1,0 +1,4 @@
+# Optional: enables the vulnerability audit in the package scan.
+# pip-audit pulls in pyyaml, which has no wheel for the newest Python versions and
+# then needs a C compiler. The installer treats this file as best effort.
+pip-audit>=2.7,<3.0

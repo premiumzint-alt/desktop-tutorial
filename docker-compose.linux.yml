@@ -1,0 +1,9 @@
+# Linux only: keep the MongoDB data files inside the project folder instead of a
+# Docker named volume. WiredTiger hangs on Docker Desktop bind mounts, so Windows
+# must keep using the default named volume.
+services:
+  mongo:
+    volumes: !override
+      - ./data/mongo:/data/db
+
+volumes: !override {}

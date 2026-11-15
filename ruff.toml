@@ -1,0 +1,8 @@
+# Lint configuration used by scripts/run_checks.ps1.
+# The rule set stays narrow so lint reports real defects instead of demanding a
+# rewrite of the existing codebase.
+target-version = "py310"
+line-length = 120
+
+[lint]
+select = ["E9", "F", "I"]
